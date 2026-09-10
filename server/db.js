@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { Pool } = require('pg');
 
 const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
@@ -45,9 +46,13 @@ function ensureSchema() {
         stripe_payment_intent_id TEXT,
         amount_total INTEGER,
         currency TEXT,
+        client_token TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
+
+      -- Safe to re-run: adds the column for databases created before it existed.
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_token TEXT;
 
       CREATE INDEX IF NOT EXISTS idx_orders_session ON orders(stripe_session_id);
       CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -58,29 +63,34 @@ function ensureSchema() {
 
 async function createOrder(order) {
   await ensureSchema();
+  const clientToken = crypto.randomBytes(20).toString('hex');
   const result = await pool.query(
     `INSERT INTO orders (
       package_name, price_cents, note,
       recipient_name, recipient_phone, recipient_address, recipient_city, recipient_state, recipient_zip,
       delivery_date, delivery_window,
-      sender_name, sender_email, sender_phone
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      sender_name, sender_email, sender_phone,
+      client_token
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
     RETURNING id`,
     [
       order.package_name, order.price_cents, order.note,
       order.recipient_name, order.recipient_phone, order.recipient_address, order.recipient_city, order.recipient_state, order.recipient_zip,
       order.delivery_date, order.delivery_window,
       order.sender_name, order.sender_email, order.sender_phone,
+      clientToken,
     ]
   );
-  return result.rows[0].id;
+  return { id: result.rows[0].id, clientToken };
 }
 
 // Used when a customer goes back and re-submits the details step (e.g. to
 // fix a typo before paying) - updates the same pending order in place
-// instead of leaving a duplicate row behind. Returns false if the order
-// doesn't exist or is no longer pending (already paid, etc).
-async function updatePendingOrder(id, order) {
+// instead of leaving a duplicate row behind. Requires the token handed back
+// when the order was created, so a guessed/sequential id alone can't be used
+// to overwrite someone else's order. Returns false if the order doesn't
+// exist, the token doesn't match, or it's no longer pending (already paid).
+async function updatePendingOrder(id, clientToken, order) {
   await ensureSchema();
   const result = await pool.query(
     `UPDATE orders SET
@@ -89,14 +99,14 @@ async function updatePendingOrder(id, order) {
       delivery_date = $10, delivery_window = $11,
       sender_name = $12, sender_email = $13, sender_phone = $14,
       updated_at = now()
-    WHERE id = $15 AND status = 'pending'
+    WHERE id = $15 AND client_token = $16 AND status = 'pending'
     RETURNING id`,
     [
       order.package_name, order.price_cents, order.note,
       order.recipient_name, order.recipient_phone, order.recipient_address, order.recipient_city, order.recipient_state, order.recipient_zip,
       order.delivery_date, order.delivery_window,
       order.sender_name, order.sender_email, order.sender_phone,
-      id,
+      id, clientToken,
     ]
   );
   return result.rows.length > 0;

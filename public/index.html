@@ -584,7 +584,7 @@ translate(current);
 
   function saveDraft(){
     try {
-      const draft = { packageName: state.packageName };
+      const draft = { packageName: state.packageName, orderId: currentOrderId, orderToken: currentOrderToken };
       persistedFields.forEach(id => { const el = document.getElementById(id); if(el) draft[id] = el.value; });
       sessionStorage.setItem(STORE_KEY, JSON.stringify(draft));
     } catch(e){}
@@ -598,6 +598,10 @@ translate(current);
       state.packageName = draft.packageName;
       state.priceCents = PRICES[draft.packageName];
       markSelectedBoxButton();
+    }
+    if(draft.orderId && draft.orderToken){
+      currentOrderId = draft.orderId;
+      currentOrderToken = draft.orderToken;
     }
     persistedFields.forEach(id => {
       const el = document.getElementById(id);
@@ -707,7 +711,9 @@ translate(current);
 
   let stripeClient = null;
   let stripeElements = null;
+  let currentPaymentElement = null;
   let currentOrderId = null;
+  let currentOrderToken = null;
 
   async function getStripeClient(){
     if(stripeClient) return stripeClient;
@@ -766,6 +772,7 @@ translate(current);
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           orderId: currentOrderId || undefined,
+          orderToken: currentOrderToken || undefined,
           packageName: state.packageName,
           note, recipientName, recipientPhone, recipientAddress, recipientCity, recipientState,
           recipientZip: zip,
@@ -776,12 +783,14 @@ translate(current);
       const orderData = await orderRes.json();
       if(!orderRes.ok) throw new Error(orderData.error || 'Could not save your order.');
       currentOrderId = orderData.orderId;
+      currentOrderToken = orderData.orderToken;
+      saveDraft();
 
       const stripe = await getStripeClient();
       const piRes = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ orderId: currentOrderId }),
+        body: JSON.stringify({ orderId: currentOrderId, orderToken: currentOrderToken }),
       });
       const piData = await piRes.json();
       if(!piRes.ok) throw new Error(piData.error || 'Could not start payment.');
@@ -797,10 +806,13 @@ translate(current);
         },
       };
       const localeMap = { pt: 'pt-BR', es: 'es-419', en: 'en' };
+      if(currentPaymentElement){
+        currentPaymentElement.unmount();
+        currentPaymentElement = null;
+      }
       stripeElements = stripe.elements({ clientSecret: piData.clientSecret, appearance, locale: localeMap[currentLang()] || 'en' });
-      const paymentElement = stripeElements.create('payment');
-      document.getElementById('payment-element').innerHTML = '';
-      paymentElement.mount('#payment-element');
+      currentPaymentElement = stripeElements.create('payment');
+      currentPaymentElement.mount('#payment-element');
 
       detailsView.hidden = true;
       paymentView.hidden = false;
@@ -833,8 +845,10 @@ translate(current);
       const result = await stripeClient.confirmPayment({
         elements: stripeElements,
         confirmParams: {
-          return_url: `${window.location.origin}/success.html?order_id=${currentOrderId}`,
-          receipt_email: document.getElementById('senderEmail').value.trim(),
+          // Stripe appends ?payment_intent=... itself on this redirect; success.html
+          // uses that to look up the order (the receipt email is already set
+          // server-side when the PaymentIntent was created).
+          return_url: `${window.location.origin}/success.html`,
         },
         redirect: 'if_required',
       });

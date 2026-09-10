@@ -134,15 +134,18 @@ app.post('/api/orders', async (req, res) => {
   try {
     // If the customer already created a pending order earlier in this same
     // checkout attempt (e.g. they went back to fix a typo), update it in
-    // place instead of leaving a duplicate row behind.
+    // place instead of leaving a duplicate row behind. The token proves this
+    // request actually came from whoever created that order - without it, a
+    // guessed/sequential id would let anyone overwrite someone else's order.
     const existingId = Number(b.orderId);
-    if (existingId) {
-      const updated = await db.updatePendingOrder(existingId, fields);
-      if (updated) return res.json({ orderId: existingId });
+    const existingToken = typeof b.orderToken === 'string' ? b.orderToken : null;
+    if (existingId && existingToken) {
+      const updated = await db.updatePendingOrder(existingId, existingToken, fields);
+      if (updated) return res.json({ orderId: existingId, orderToken: existingToken });
     }
 
-    const orderId = await db.createOrder(fields);
-    res.json({ orderId });
+    const { id: orderId, clientToken: orderToken } = await db.createOrder(fields);
+    res.json({ orderId, orderToken });
   } catch (err) {
     console.error('Failed to save order:', err.message);
     res.status(500).json({ error: 'Could not save your order. Please try again.' });
@@ -155,11 +158,17 @@ app.post('/api/create-payment-intent', async (req, res) => {
   }
 
   const orderId = Number(req.body?.orderId);
+  const orderToken = typeof req.body?.orderToken === 'string' ? req.body.orderToken : null;
   if (!orderId) return res.status(400).json({ error: 'orderId is required.' });
+  if (!orderToken) return res.status(400).json({ error: 'orderToken is required.' });
 
   try {
     const order = await db.getOrderById(orderId);
     if (!order) return res.status(404).json({ error: 'Order not found.' });
+    // Constant-time-ish check isn't critical here (this isn't a password),
+    // but a plain mismatch is enough to stop a guessed id from being used to
+    // pay someone else's order.
+    if (order.client_token !== orderToken) return res.status(403).json({ error: 'Not authorized for this order.' });
     if (order.status === 'paid') return res.status(400).json({ error: 'This order has already been paid.' });
 
     let intent;
