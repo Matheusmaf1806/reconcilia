@@ -202,6 +202,12 @@ I just wanted to remind you that I love you, and that you mean the world to me.<
               <div class="form-row"><div class="field"><label id="lbl-senderName">Your name</label><input id="senderName" type="text" placeholder="Your name" autocomplete="name"></div><div class="field"><label id="lbl-senderEmail">Your email (for the receipt)</label><input id="senderEmail" type="email" placeholder="you@email.com" autocomplete="email"></div></div>
               <div class="field"><label id="lbl-senderPhone">Your phone (optional)</label><input id="senderPhone" type="tel" placeholder="(407) 555-0134" autocomplete="tel"></div>
             </div>
+            <div id="same-name-warning" class="result" role="status" aria-live="polite" style="background:#fdf3d9;border-left-color:var(--yellow)">
+              <div style="display:flex;align-items:center;gap:8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <span id="same-name-warning-text">Heads up: the recipient's name matches yours. Just double-checking this is going to the right person.</span>
+              </div>
+            </div>
             <div id="details-error" class="result" role="alert" aria-live="assertive" style="background:#fbe4e2;border-left-color:var(--red)"></div>
           </div>
         </div>
@@ -296,6 +302,7 @@ translate(current);
       step3Title:'Write your message', step3Sub:'No ready-made message — write it the way you would say it face to face. We print it exactly as you write it, on real gift paper.',
       detailsTitle:'Delivery + your details', detailsSub:'We deliver to the ZIP code you checked above.',
       lblRecipientSection:"Who's receiving this", lblSenderSection:'Your info',
+      sameNameWarning:"Heads up: the recipient's name matches yours. Just double-checking this is going to the right person.",
       lblRecipientName:'Recipient full name', phRecipientName:'Her name',
       lblRecipientPhone:'Recipient phone (optional)', phPhone:'(407) 555-0134',
       lblStreet:'Street address', phStreet:'123 Main St, Apt 4B',
@@ -333,6 +340,7 @@ translate(current);
       step3Title:'Escreva sua mensagem', step3Sub:'Sem mensagem pronta — escreva como você falaria olhando nos olhos. Imprimimos exatamente como você escreveu, em papel de presente de verdade.',
       detailsTitle:'Entrega + seus dados', detailsSub:'Entregamos no ZIP code que você conferiu acima.',
       lblRecipientSection:'Quem vai receber', lblSenderSection:'Seus dados',
+      sameNameWarning:'Atenção: o nome de quem recebe é igual ao seu. Só confirmando se está indo para a pessoa certa.',
       lblRecipientName:'Nome completo de quem vai receber', phRecipientName:'Nome dela',
       lblRecipientPhone:'Telefone de quem vai receber (opcional)', phPhone:'(407) 555-0134',
       lblStreet:'Endereço', phStreet:'123 Main St, Apt 4B',
@@ -370,6 +378,7 @@ translate(current);
       step3Title:'Escribe tu mensaje', step3Sub:'Sin mensaje preparado — escríbelo como lo dirías frente a frente. Lo imprimimos exactamente como lo escribas, en papel de regalo real.',
       detailsTitle:'Entrega + tus datos', detailsSub:'Entregamos en el código postal que revisaste arriba.',
       lblRecipientSection:'Quién lo va a recibir', lblSenderSection:'Tus datos',
+      sameNameWarning:'Atención: el nombre de quien recibe es igual al tuyo. Solo confirmando que va a la persona correcta.',
       lblRecipientName:'Nombre completo de quien recibe', phRecipientName:'Su nombre',
       lblRecipientPhone:'Teléfono de quien recibe (opcional)', phPhone:'(407) 555-0134',
       lblStreet:'Dirección', phStreet:'123 Main St, Apt 4B',
@@ -415,6 +424,7 @@ translate(current);
     set('step3-title', s.step3Title); set('step3-sub', s.step3Sub);
     set('details-title', s.detailsTitle); set('details-sub', s.detailsSub);
     set('lbl-recipient-section', s.lblRecipientSection); set('lbl-sender-section', s.lblSenderSection);
+    set('same-name-warning-text', s.sameNameWarning);
     set('lbl-recipientName', s.lblRecipientName); set('lbl-recipientPhone', s.lblRecipientPhone);
     set('lbl-street', s.lblStreet); set('lbl-city', s.lblCity); set('lbl-state', s.lblState);
     set('lbl-senderName', s.lblSenderName); set('lbl-senderEmail', s.lblSenderEmail); set('lbl-senderPhone', s.lblSenderPhone);
@@ -609,6 +619,7 @@ translate(current);
       const el = document.getElementById(id);
       if(el && draft[id] && !el.value) el.value = draft[id];
     });
+    checkSameName();
   }
 
   persistedFields.forEach(id => {
@@ -626,6 +637,20 @@ translate(current);
   ['recipientPhone','senderPhone'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener('input', e => { e.target.value = formatPhone(e.target.value); });
+  });
+
+  // ---------- same-name check: a soft nudge, never blocks continuing ----------
+  function checkSameName(){
+    const warning = document.getElementById('same-name-warning');
+    if(!warning) return;
+    const recipientName = document.getElementById('recipientName').value.trim().toLowerCase();
+    const senderName = document.getElementById('senderName').value.trim().toLowerCase();
+    const same = recipientName && senderName && recipientName === senderName;
+    warning.classList.toggle('show', Boolean(same));
+  }
+  ['recipientName','senderName'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', checkSameName);
   });
 
   // ---------- footer summary (inside the modal) ----------
