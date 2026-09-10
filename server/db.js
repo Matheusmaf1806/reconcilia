@@ -1,10 +1,31 @@
 const crypto = require('crypto');
 const { Pool } = require('pg');
 
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const rawConnectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
-if (!connectionString) {
+if (!rawConnectionString) {
   console.warn('[warn] DATABASE_URL (or POSTGRES_URL) is not set. Database calls will fail until you add it to .env');
+}
+
+const isLocal = rawConnectionString && /localhost|127\.0\.0\.1/.test(rawConnectionString);
+
+// Providers like Supabase append `?sslmode=require` to their connection
+// string. `pg` also parses that query param itself, and depending on the
+// installed version it can win over the `ssl` option below - silently
+// re-enabling strict certificate validation and causing "self-signed
+// certificate in certificate chain" even though we asked it not to verify.
+// Stripping it here means our explicit `ssl` option is the only thing that
+// decides how the connection is secured.
+let connectionString = rawConnectionString;
+if (rawConnectionString && !isLocal) {
+  try {
+    const url = new URL(rawConnectionString);
+    url.searchParams.delete('sslmode');
+    url.searchParams.delete('ssl');
+    connectionString = url.toString();
+  } catch {
+    // Not a parseable URL (e.g. already malformed) - fall back to it as-is.
+  }
 }
 
 // A single pooled connection reused across warm serverless invocations.
@@ -14,9 +35,7 @@ if (!connectionString) {
 // Supabase's pgbouncer URL), use that here instead of the direct one.
 const pool = new Pool({
   connectionString,
-  ssl: connectionString && !/localhost|127\.0\.0\.1/.test(connectionString)
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: connectionString && !isLocal ? { rejectUnauthorized: false } : false,
   max: 5,
 });
 
