@@ -18,6 +18,19 @@
     a.btn{display:inline-block;margin-top:12px;background:var(--ink);color:var(--paper);padding:14px 22px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px}
     .pending{color:#8f2927}
   </style>
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fetch('/api/config').then(r=>r.json()).then(cfg=>{
+    if(cfg.pixelId){ fbq('init', cfg.pixelId); fbq('track','PageView'); }
+  }).catch(()=>{});
+  </script>
 </head>
 <body>
   <div class="card">
@@ -63,6 +76,22 @@
             row.appendChild(document.createTextNode(' ' + value));
             detailsEl.appendChild(row);
           });
+
+          // This page is only reached for the rare 3D-Secure redirect, where
+          // the main checkout page never got to fire its own Purchase pixel
+          // event. Guarded so a refresh doesn't double-fire it, and shares
+          // its event_id with the server-side Purchase CAPI event fired from
+          // the webhook so Meta dedupes them into one conversion.
+          const firedKey = 'reconcilia-purchase-fired-' + order.orderId;
+          if(order.orderId && typeof fbq === 'function' && !sessionStorage.getItem(firedKey)){
+            fbq('track', 'Purchase', {
+              currency: (order.currency || 'usd').toUpperCase(),
+              value: (order.amountTotal || 0) / 100,
+              content_type: 'product',
+              content_ids: order.packageName ? [order.packageName] : [],
+            }, { eventID: 'purchase_' + order.orderId });
+            try { sessionStorage.setItem(firedKey, '1'); } catch(e){}
+          }
           return;
         }
 

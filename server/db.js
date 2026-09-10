@@ -66,12 +66,20 @@ function ensureSchema() {
         amount_total INTEGER,
         currency TEXT,
         client_token TEXT,
+        fbp TEXT,
+        fbc TEXT,
+        client_ip TEXT,
+        client_user_agent TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
 
-      -- Safe to re-run: adds the column for databases created before it existed.
+      -- Safe to re-run: adds columns for databases created before they existed.
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_token TEXT;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS fbp TEXT;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS fbc TEXT;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_ip TEXT;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_user_agent TEXT;
 
       CREATE INDEX IF NOT EXISTS idx_orders_session ON orders(stripe_session_id);
       CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -89,15 +97,15 @@ async function createOrder(order) {
       recipient_name, recipient_phone, recipient_address, recipient_city, recipient_state, recipient_zip,
       delivery_date, delivery_window,
       sender_name, sender_email, sender_phone,
-      client_token
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+      client_token, fbp, fbc, client_ip, client_user_agent
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
     RETURNING id`,
     [
       order.package_name, order.price_cents, order.note,
       order.recipient_name, order.recipient_phone, order.recipient_address, order.recipient_city, order.recipient_state, order.recipient_zip,
       order.delivery_date, order.delivery_window,
       order.sender_name, order.sender_email, order.sender_phone,
-      clientToken,
+      clientToken, order.fbp, order.fbc, order.client_ip, order.client_user_agent,
     ]
   );
   return { id: result.rows[0].id, clientToken };
@@ -117,14 +125,16 @@ async function updatePendingOrder(id, clientToken, order) {
       recipient_name = $4, recipient_phone = $5, recipient_address = $6, recipient_city = $7, recipient_state = $8, recipient_zip = $9,
       delivery_date = $10, delivery_window = $11,
       sender_name = $12, sender_email = $13, sender_phone = $14,
+      fbp = $15, fbc = $16, client_ip = $17, client_user_agent = $18,
       updated_at = now()
-    WHERE id = $15 AND client_token = $16 AND status = 'pending'
+    WHERE id = $19 AND client_token = $20 AND status = 'pending'
     RETURNING id`,
     [
       order.package_name, order.price_cents, order.note,
       order.recipient_name, order.recipient_phone, order.recipient_address, order.recipient_city, order.recipient_state, order.recipient_zip,
       order.delivery_date, order.delivery_window,
       order.sender_name, order.sender_email, order.sender_phone,
+      order.fbp, order.fbc, order.client_ip, order.client_user_agent,
       id, clientToken,
     ]
   );

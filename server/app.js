@@ -7,12 +7,14 @@ const Stripe = require('stripe');
 
 const db = require('./db');
 const { getPackage } = require('./packages');
+const metaCapi = require('./meta-capi');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const META_PIXEL_ID = process.env.META_PIXEL_ID;
 
 if (!STRIPE_SECRET_KEY) {
   console.warn('[warn] STRIPE_SECRET_KEY is not set. Checkout will fail until you add it to .env');
@@ -25,6 +27,10 @@ const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 const app = express();
 app.disable('x-powered-by');
+// Vercel (and most hosts) put the real client IP in X-Forwarded-For; trusting
+// it is what lets req.ip resolve to the customer's IP instead of the proxy's,
+// which the Meta Conversions API needs for match quality.
+app.set('trust proxy', true);
 
 // --- Stripe webhook needs the raw body for signature verification,
 // so it must be registered BEFORE express.json(). ---
@@ -51,6 +57,20 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
           amountReceived: intent.amount_received,
           currency: intent.currency,
         });
+        // The authoritative Purchase event: fired here (not just from the
+        // browser) so it's still recorded even if the customer's browser
+        // blocked the Pixel or never made it back to the confirmation
+        // screen. Shares its event_id with the browser-side Purchase pixel
+        // so Meta deduplicates them into a single counted conversion.
+        const order = await db.getOrderByPaymentIntentId(intent.id);
+        if (order) {
+          metaCapi.sendEvent({
+            eventName: 'Purchase',
+            eventId: `purchase_${order.id}`,
+            order,
+            customData: metaCapi.packageCustomData(order),
+          }).catch(() => {});
+        }
         break;
       }
       case 'payment_intent.payment_failed': {
@@ -77,7 +97,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/api/config', (req, res) => {
-  res.json({ publishableKey: STRIPE_PUBLISHABLE_KEY || null });
+  res.json({ publishableKey: STRIPE_PUBLISHABLE_KEY || null, pixelId: META_PIXEL_ID || null });
 });
 
 // Diagnostics for deployment troubleshooting. Reports whether required
@@ -153,6 +173,13 @@ app.post('/api/orders', async (req, res) => {
     sender_name: b.senderName.trim(),
     sender_email: email,
     sender_phone: (b.senderPhone || '').trim() || null,
+    // Meta ad-attribution cookies, forwarded by the client so the
+    // Conversions API events fired later (AddPaymentInfo, Purchase) can be
+    // matched to the same browser session the Pixel already saw.
+    fbp: isNonEmptyString(b.fbp, 200) ? b.fbp.trim() : null,
+    fbc: isNonEmptyString(b.fbc, 200) ? b.fbc.trim() : null,
+    client_ip: req.ip || null,
+    client_user_agent: (req.headers['user-agent'] || '').slice(0, 500) || null,
   };
 
   try {
@@ -223,6 +250,15 @@ app.post('/api/create-payment-intent', async (req, res) => {
       await db.attachPaymentIntent(orderId, intent.id);
     }
 
+    // Mirrors the AddPaymentInfo pixel event the browser fires at this same
+    // moment, server-side. Never let a Meta API hiccup break checkout.
+    metaCapi.sendEvent({
+      eventName: 'AddPaymentInfo',
+      eventId: `addpayinfo_${order.id}`,
+      order,
+      customData: metaCapi.packageCustomData(order),
+    }).catch(() => {});
+
     res.json({ clientSecret: intent.client_secret });
   } catch (err) {
     console.error('Failed to create payment intent:', err.message);
@@ -236,6 +272,7 @@ app.get('/api/orders/by-payment-intent/:id', async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Order not found.' });
 
     res.json({
+      orderId: order.id,
       status: order.status,
       packageName: order.package_name,
       recipientName: order.recipient_name,

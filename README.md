@@ -27,6 +27,11 @@ and get paid — deployable on Vercel.
   order (paid, pending, expired) with revenue stats, and a detail view per
   order showing the package, the recipient's address, the delivery window,
   the sender's contact info, and the gift note ("carta").
+- **Meta Pixel + Conversions API** — tracks ViewContent, InitiateCheckout,
+  AddPaymentInfo and Purchase, each fired from the browser (Pixel) and, for
+  the two events ad platforms weight most, mirrored server-side (Conversions
+  API) so a blocked pixel or a lost connection doesn't lose the conversion.
+  See [Meta Pixel + Conversions API](#meta-pixel--conversions-api) below.
 
 ## Quick start (local development)
 
@@ -120,6 +125,9 @@ In **Settings → Environment Variables**, add:
 | `PUBLIC_BASE_URL` | `https://your-project.vercel.app` (or your custom domain) |
 | `ADMIN_USER` | Whatever you want to log into `/admin` with |
 | `ADMIN_PASSWORD` | A strong password — this protects real customer data |
+| `META_PIXEL_ID` | Optional — your Meta Pixel ID, to enable ad tracking |
+| `META_ACCESS_TOKEN` | Optional — Conversions API access token (required alongside `META_PIXEL_ID`) |
+| `META_TEST_EVENT_CODE` | Optional — only while verifying events in the Test Events tool |
 
 Redeploy after adding these (Vercel doesn't apply new env vars to an
 already-built deployment).
@@ -146,6 +154,53 @@ Place a test order on your live URL with Stripe's test card
 
 Add it under **Settings → Domains** in Vercel, then update `PUBLIC_BASE_URL`
 to match and redeploy (it's used to build the Stripe success/cancel links).
+
+## Meta Pixel + Conversions API
+
+Both the browser Pixel and the server-side Conversions API (CAPI) are wired
+up, sharing the same event IDs so Meta deduplicates each conversion down to
+one — this is what Meta calls "dual tracking" and it's the recommended setup:
+the Pixel alone loses events to ad blockers, Safari's tracking prevention,
+and customers who close the tab before the confirmation page loads; CAPI
+alone has worse match quality without the Pixel's first-party cookie. Nothing
+is tracked, and no code changes are needed, unless `META_PIXEL_ID` is set —
+leaving it unset is a complete no-op.
+
+| Event | Fired from the browser (Pixel) when… | Also fired server-side (CAPI)? |
+|---|---|---|
+| `PageView` | Every page loads | No |
+| `ViewContent` | A box is selected (landing page or step 1) | No |
+| `InitiateCheckout` | The checkout modal opens | No |
+| `AddPaymentInfo` | The order is saved and the card form loads (step 5) | Yes — from `POST /api/create-payment-intent` |
+| `Purchase` | Payment confirms with no redirect, or on `success.html` after a 3D Secure redirect | Yes — from the `payment_intent.succeeded` webhook (the authoritative copy) |
+
+`AddPaymentInfo` and `Purchase` use a deterministic `event_id`
+(`addpayinfo_<orderId>` / `purchase_<orderId>`) on both the Pixel call and the
+CAPI call, which is how Meta knows they're the same event rather than two
+separate conversions. `ViewContent`/`InitiateCheckout` are Pixel-only — for
+top-of-funnel events, browser-side loss is an acceptable trade-off and Meta's
+own guidance prioritizes CAPI coverage for `AddPaymentInfo`/`Purchase`.
+
+The CAPI request includes whatever it can for match quality: the sender's
+email and phone (SHA-256 hashed, never sent in plaintext), the `_fbp`/`_fbc`
+ad-attribution cookies the Pixel already set on the customer's browser, and
+their IP/user-agent captured at order-creation time (`server/meta-capi.js`,
+`server/db.js`'s `fbp`/`fbc`/`client_ip`/`client_user_agent` columns). A
+failed or skipped Meta API call never breaks checkout — it's fire-and-forget,
+wrapped in its own `try`/`catch`.
+
+### Setup
+
+1. In [Meta Events Manager](https://business.facebook.com/events_manager2) →
+   **Data Sources** → your pixel → **Settings**, copy the **Pixel ID**.
+2. Same page → **Conversions API** → **Generate access token**, copy it.
+3. Add both as `META_PIXEL_ID` and `META_ACCESS_TOKEN` (see the env var table
+   above for Vercel, or `.env` locally) and redeploy/restart.
+4. Optional: Events Manager → **Test Events** shows a code — set it as
+   `META_TEST_EVENT_CODE` to watch events arrive live while you test a
+   checkout, then remove it so real traffic isn't tagged as a test.
+5. Events Manager → **Diagnostics** will flag any event with match-quality or
+   deduplication issues if something isn't wired up right.
 
 ## How pricing works
 
@@ -179,6 +234,7 @@ server/
   app.js         The Express app: routes, Stripe integration, webhook, admin auth
   index.js       Local dev entrypoint (calls app.listen())
   db.js          Postgres schema + queries (pg)
+  meta-capi.js   Meta Conversions API client (server-side event tracking)
   packages.js    Source of truth for box names/prices
 admin-panel/
   index.html     Admin UI (served only behind basic auth, not under public/)

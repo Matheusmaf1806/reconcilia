@@ -97,6 +97,22 @@ body.modal-open .order-bar,body.modal-open .toast{display:none!important}
 .sender-block .detail-section-label{color:var(--muted);margin-top:2px}
 </style>
 <script src="https://js.stripe.com/v3/"></script>
+<script>
+// Meta Pixel base code (standard snippet, ID injected once /api/config
+// responds instead of being hardcoded here). fbq() queues calls made before
+// fbevents.js finishes loading, so events fired during the wait still work.
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  if(cfg.pixelId){ window.__metaPixelId = cfg.pixelId; fbq('init', cfg.pixelId); fbq('track','PageView'); }
+}).catch(()=>{});
+</script>
 </head>
 <body>
   <div class="topbar"><b>SAME-DAY DELIVERY IN ORLANDO</b> order by 2 PM · delivery included in every price</div>
@@ -285,6 +301,25 @@ translate(current);
   const PRICES = { 'The sweet one': 5900, 'The apology': 17900, 'The missing you': 22900 };
   const state = { packageName: null, priceCents: null, currentStep: 1 };
 
+  // ---------- Meta Pixel helpers ----------
+  function getCookie(name){
+    const match = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+  function fbTrack(eventName, data, eventId){
+    if(typeof fbq !== 'function') return;
+    fbq('track', eventName, data || {}, eventId ? { eventID: eventId } : undefined);
+  }
+  function packageEventData(packageName, priceCents){
+    return {
+      currency: 'USD',
+      value: (priceCents || 0) / 100,
+      content_type: 'product',
+      content_ids: packageName ? [packageName] : [],
+      contents: packageName ? [{ id: packageName, quantity: 1, item_price: (priceCents || 0) / 100 }] : [],
+    };
+  }
+
   function currentLang(){
     try { return localStorage.getItem('reconcilia-lang') || 'en'; } catch(e){ return 'en'; }
   }
@@ -463,6 +498,7 @@ translate(current);
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
     document.body.style.overflow = 'hidden';
+    fbTrack('InitiateCheckout', packageEventData(state.packageName, state.priceCents));
     goToStep(step || 1);
   }
 
@@ -545,6 +581,7 @@ translate(current);
       markSelectedBoxButton();
       saveDraft();
       refreshBar();
+      fbTrack('ViewContent', packageEventData(state.packageName, state.priceCents));
       setTimeout(() => goToStep(2), 150);
     });
   });
@@ -717,6 +754,7 @@ translate(current);
 
   stripAndBind('.choose', function(e){
     e.preventDefault();
+    fbTrack('ViewContent', packageEventData(this.dataset.package, PRICES[this.dataset.package]));
     openModal(2, this.dataset.package);
   });
 
@@ -802,6 +840,7 @@ translate(current);
           recipientZip: zip,
           deliveryDate: day.dataset.day, deliveryWindow: slot.dataset.time,
           senderName, senderEmail, senderPhone,
+          fbp: getCookie('_fbp'), fbc: getCookie('_fbc'),
         }),
       });
       const orderData = await orderRes.json();
@@ -839,6 +878,7 @@ translate(current);
       currentPaymentElement.mount('#payment-element');
 
       saveDraft();
+      fbTrack('AddPaymentInfo', packageEventData(state.packageName, state.priceCents), `addpayinfo_${currentOrderId}`);
       goToStep(5);
     } catch(err){
       showError('details-error', err.message || 'Something went wrong. Please try again.');
@@ -878,6 +918,9 @@ translate(current);
       }
 
       // No redirect was needed (most cards) - show the confirmation right here.
+      // Shares its event_id with the server-side Purchase CAPI event fired
+      // from the webhook, so Meta counts this as one conversion, not two.
+      fbTrack('Purchase', packageEventData(state.packageName, state.priceCents), `purchase_${currentOrderId}`);
       try { sessionStorage.removeItem(STORE_KEY); } catch(e){}
       paymentView.hidden = true;
       successView.hidden = false;
