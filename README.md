@@ -3,7 +3,7 @@
 Landing page + checkout + admin panel for **reconcilia**, a same-day gift box
 delivery service for the Orlando, FL area. Built on top of the original
 marketing page design, wired to a real backend so it can actually take orders
-and get paid.
+and get paid — deployable on Vercel.
 
 ## What's included
 
@@ -14,29 +14,37 @@ and get paid.
   Fully localized (EN/ES/PT).
 - **Checkout** — Stripe Checkout (hosted, PCI-compliant). We never see or
   store card numbers; Stripe handles that entirely.
-- **Backend** (`server/`) — Node.js + Express + SQLite. Validates orders,
+- **Backend** (`server/`) — Node.js + Express + Postgres. Validates orders,
   creates Stripe Checkout Sessions, and listens for the `checkout.session.completed`
-  webhook to mark orders paid.
+  webhook to mark orders paid. Runs as a normal server locally (`server/index.js`)
+  and as a Vercel serverless function in production (`api/index.js`) from the
+  same Express app (`server/app.js`).
 - **Admin panel** (`/admin`, protected by HTTP basic auth) — a list of every
   order (paid, pending, expired) with revenue stats, and a detail view per
   order showing the package, the recipient's address, the delivery window,
   the sender's contact info, and the gift note ("carta").
 
-## Quick start
+## Quick start (local development)
 
 ```bash
 npm install
 cp .env.example .env
 ```
 
+You need a Postgres database to develop against — either a local Postgres
+install, or a free hosted one (Neon, Supabase, or Vercel Postgres all work).
 Edit `.env`:
 
 ```
+DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME
 STRIPE_SECRET_KEY=sk_test_...       # from https://dashboard.stripe.com/test/apikeys
 STRIPE_WEBHOOK_SECRET=whsec_...     # see below
 ADMIN_USER=admin
 ADMIN_PASSWORD=pick-a-real-password
 ```
+
+The `orders` table is created automatically on first request — no migration
+step needed.
 
 Run the server:
 
@@ -68,23 +76,68 @@ local server and the order flips to "paid" automatically.
 4. Open `http://localhost:3000/admin` (login with `ADMIN_USER`/`ADMIN_PASSWORD`)
    to see the order, its note, address and delivery window.
 
-## Deploying to production
+## Deploying to Vercel
 
-1. Host the Node app anywhere that runs a long-lived Node process (Render,
-   Railway, Fly.io, a VPS, etc.) — this app is not built for serverless
-   platforms as-is because it uses a local SQLite file for storage. If you
-   deploy to something serverless (Vercel, etc.), swap `server/db.js` for a
-   hosted database (e.g. Postgres) first, since serverless filesystems are
-   ephemeral.
-2. Set real environment variables: `STRIPE_SECRET_KEY` (live key),
-   `STRIPE_WEBHOOK_SECRET` (from a webhook endpoint you create in the Stripe
-   Dashboard pointing at `https://yourdomain.com/api/webhook`),
-   `PUBLIC_BASE_URL=https://yourdomain.com`, and a strong `ADMIN_PASSWORD`.
-3. In the Stripe Dashboard, add a webhook endpoint for
-   `checkout.session.completed` (and optionally `checkout.session.expired`)
-   pointing at `/api/webhook`.
-4. Put the app behind HTTPS (required for Stripe and for basic auth to be
-   safe).
+This repo is already set up for Vercel: `vercel.json` routes `/api/*` and
+`/admin*` to a serverless function (`api/index.js`) that runs the same
+Express app used locally, and everything in `public/` is served as static
+files. You need to connect three things:
+
+### 1. Import the repo into Vercel
+
+In the Vercel dashboard: **Add New → Project**, import this GitHub repo.
+No build command is needed (leave the framework preset as "Other" — Vercel
+will detect `vercel.json`).
+
+### 2. Add a Postgres database
+
+Go to your project's **Storage** tab → **Create Database** → **Postgres**
+(or connect an existing Neon/Supabase database via **Connect Store**). This
+automatically sets a `POSTGRES_URL` environment variable on the project —
+`server/db.js` picks it up with no extra config (it checks `DATABASE_URL`
+first, then falls back to `POSTGRES_URL`).
+
+If your provider gives you both a direct and a "pooled"/"pgbouncer"
+connection string, use the **pooled** one. Serverless functions can spin up
+many short-lived instances at once, and a pooled connection string avoids
+exhausting your database's connection limit.
+
+### 3. Add the rest of the environment variables
+
+In **Settings → Environment Variables**, add:
+
+| Variable | Value |
+|---|---|
+| `STRIPE_SECRET_KEY` | Your live (or test) key from the Stripe Dashboard |
+| `STRIPE_WEBHOOK_SECRET` | See step 4 below |
+| `PUBLIC_BASE_URL` | `https://your-project.vercel.app` (or your custom domain) |
+| `ADMIN_USER` | Whatever you want to log into `/admin` with |
+| `ADMIN_PASSWORD` | A strong password — this protects real customer data |
+
+Redeploy after adding these (Vercel doesn't apply new env vars to an
+already-built deployment).
+
+### 4. Point a Stripe webhook at your deployed URL
+
+In the [Stripe Dashboard](https://dashboard.stripe.com/webhooks) → **Add
+endpoint**:
+- URL: `https://your-project.vercel.app/api/webhook`
+- Events: `checkout.session.completed` (and optionally `checkout.session.expired`)
+
+Stripe shows you a signing secret (`whsec_...`) — put that in the
+`STRIPE_WEBHOOK_SECRET` env var on Vercel and redeploy.
+
+### 5. Test it for real
+
+Place a test order on your live URL with Stripe's test card
+`4242 4242 4242 4242`, then check `https://your-project.vercel.app/admin` —
+the order should show up as "paid" within a couple seconds of completing
+checkout.
+
+### Custom domain
+
+Add it under **Settings → Domains** in Vercel, then update `PUBLIC_BASE_URL`
+to match and redeploy (it's used to build the Stripe success/cancel links).
 
 ## How pricing works
 
@@ -101,9 +154,9 @@ cards' markup/prices in the same file.
   Stripe's own hosted page.
 - The webhook endpoint verifies Stripe's signature before trusting any
   "payment completed" event.
-- The admin panel is behind HTTP Basic Auth. Use a strong password and only
-  serve the site over HTTPS in production (Basic Auth credentials are sent
-  on every request).
+- The admin panel is behind HTTP Basic Auth. Use a strong password — Vercel
+  serves everything over HTTPS by default, which is required for Basic Auth
+  credentials to be sent safely.
 - All user-supplied text (the gift note, addresses, names) is stored as-is
   and escaped wherever it's rendered back into HTML (admin panel, success
   page) to avoid XSS.
@@ -111,9 +164,12 @@ cards' markup/prices in the same file.
 ## Project structure
 
 ```
+api/
+  index.js       Vercel serverless entrypoint - just re-exports server/app.js
 server/
-  index.js       Express app: routes, Stripe integration, webhook, admin auth
-  db.js          SQLite schema + queries
+  app.js         The Express app: routes, Stripe integration, webhook, admin auth
+  index.js       Local dev entrypoint (calls app.listen())
+  db.js          Postgres schema + queries (pg)
   packages.js    Source of truth for box names/prices
 admin-panel/
   index.html     Admin UI (served only behind basic auth, not under public/)
@@ -121,6 +177,6 @@ public/
   index.html     The landing page + checkout flow
   success.html   Post-payment confirmation
   cancel.html    Shown if checkout is canceled
-data/
-  orders.db      SQLite database (created automatically, gitignored)
+  images/        Product photos
+vercel.json      Routes /api/* and /admin* to the serverless function
 ```
