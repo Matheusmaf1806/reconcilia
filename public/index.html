@@ -88,7 +88,13 @@ body{padding-bottom:74px}
 @keyframes modal-shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
 [hidden]{display:none!important}
 body.modal-open .order-bar,body.modal-open .toast{display:none!important}
-</style></head>
+#payment-element{margin-bottom:6px}
+.success-seal{width:56px;height:56px;border-radius:50%;background:var(--red);color:#fff4ea;display:grid;place-items:center;font-size:26px;margin:8px auto 20px}
+#step4-success{text-align:center;padding:20px 0}
+#step4-success h3{margin-bottom:8px}
+</style>
+<script src="https://js.stripe.com/v3/"></script>
+</head>
 <body>
   <div class="topbar"><b>SAME-DAY DELIVERY IN ORLANDO</b> order by 2 PM · delivery included in every price</div>
   <header><div class="wrap nav"><a class="logo" href="#top">reconcilia<span> <i>♥</i></span></a><nav class="navlinks"><a href="#boxes">The boxes</a><a href="#note-section">The note</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a></nav><div class="lang-switch"><select id="language-switch" aria-label="Language"><option value="en">EN</option><option value="es">ES</option><option value="pt">PT</option></select></div><a class="nav-cta" href="#delivery">Check availability →</a></div></header>
@@ -177,16 +183,31 @@ I cannot undo it with a box, but I can start by showing you that I still care. D
         </div>
 
         <div class="order-modal-step" data-step="4" hidden>
-          <h3 id="details-title">Delivery + your details</h3>
-          <p class="step-sub" id="details-sub">We deliver to the ZIP code you checked above.</p>
-          <div class="form-row"><div class="field"><label id="lbl-recipientName">Recipient full name</label><input id="recipientName" type="text" placeholder="Her name" autocomplete="shipping name"></div><div class="field"><label id="lbl-recipientPhone">Recipient phone (optional)</label><input id="recipientPhone" type="tel" placeholder="(407) 555-0134" autocomplete="shipping tel"></div></div>
-          <div class="field"><label id="lbl-street">Street address</label><input id="recipientAddress" type="text" placeholder="123 Main St, Apt 4B" autocomplete="shipping street-address"></div>
-          <div class="form-row"><div class="field"><label id="lbl-city">City</label><input id="recipientCity" type="text" value="Orlando" autocomplete="shipping address-level2"></div><div class="field"><label id="lbl-state">State</label><input id="recipientState" type="text" value="FL" maxlength="2" autocomplete="shipping address-level1"></div></div>
-          <div class="form-row"><div class="field"><label id="lbl-senderName">Your name</label><input id="senderName" type="text" placeholder="Your name" autocomplete="name"></div><div class="field"><label id="lbl-senderEmail">Your email (for the receipt)</label><input id="senderEmail" type="email" placeholder="you@email.com" autocomplete="email"></div></div>
-          <div class="field"><label id="lbl-senderPhone">Your phone (optional)</label><input id="senderPhone" type="tel" placeholder="(407) 555-0134" autocomplete="tel"></div>
-          <div id="checkout-error" class="result" role="alert" aria-live="assertive" style="background:#fbe4e2;border-left-color:var(--red)"></div>
-          <button class="btn red" id="pay-btn" style="width:100%;justify-content:center">Pay securely →</button>
-          <p id="trust-line" style="font-size:11px;color:var(--muted);margin-top:10px">🔒 Payment is processed by Stripe. We never see or store your card details.</p>
+          <div id="step4-details">
+            <h3 id="details-title">Delivery + your details</h3>
+            <p class="step-sub" id="details-sub">We deliver to the ZIP code you checked above.</p>
+            <div class="form-row"><div class="field"><label id="lbl-recipientName">Recipient full name</label><input id="recipientName" type="text" placeholder="Her name" autocomplete="shipping name"></div><div class="field"><label id="lbl-recipientPhone">Recipient phone (optional)</label><input id="recipientPhone" type="tel" placeholder="(407) 555-0134" autocomplete="shipping tel"></div></div>
+            <div class="field"><label id="lbl-street">Street address</label><input id="recipientAddress" type="text" placeholder="123 Main St, Apt 4B" autocomplete="shipping street-address"></div>
+            <div class="form-row"><div class="field"><label id="lbl-city">City</label><input id="recipientCity" type="text" value="Orlando" autocomplete="shipping address-level2"></div><div class="field"><label id="lbl-state">State</label><input id="recipientState" type="text" value="FL" maxlength="2" autocomplete="shipping address-level1"></div></div>
+            <div class="form-row"><div class="field"><label id="lbl-senderName">Your name</label><input id="senderName" type="text" placeholder="Your name" autocomplete="name"></div><div class="field"><label id="lbl-senderEmail">Your email (for the receipt)</label><input id="senderEmail" type="email" placeholder="you@email.com" autocomplete="email"></div></div>
+            <div class="field"><label id="lbl-senderPhone">Your phone (optional)</label><input id="senderPhone" type="tel" placeholder="(407) 555-0134" autocomplete="tel"></div>
+            <div id="details-error" class="result" role="alert" aria-live="assertive" style="background:#fbe4e2;border-left-color:var(--red)"></div>
+            <button class="btn red" id="continue-to-payment-btn" style="width:100%;justify-content:center">Continue to payment →</button>
+          </div>
+          <div id="step4-payment" hidden>
+            <h3 id="payment-title">Pay securely</h3>
+            <p class="step-sub" id="payment-sub">Enter your card details below. This never touches our servers.</p>
+            <button type="button" class="btn ghost" id="edit-details-btn" style="margin-bottom:14px;padding:8px 14px;font-size:11px">← <span id="edit-details-label">Edit your details</span></button>
+            <div id="payment-element"></div>
+            <div id="checkout-error" class="result" role="alert" aria-live="assertive" style="background:#fbe4e2;border-left-color:var(--red)"></div>
+            <button class="btn red" id="pay-btn" style="width:100%;justify-content:center;margin-top:16px">Pay securely →</button>
+            <p id="trust-line" style="font-size:11px;color:var(--muted);margin-top:10px">🔒 Payment is processed by Stripe. We never see or store your card details.</p>
+          </div>
+          <div id="step4-success" hidden>
+            <div class="success-seal">✓</div>
+            <h3 id="success-title">The gesture is on its way.</h3>
+            <p class="step-sub" id="success-sub">Payment confirmed. We're hand-packing the box now — check your email for the receipt.</p>
+          </div>
         </div>
       </div>
 
@@ -275,6 +296,14 @@ translate(current);
       errRecipient:'Fill in the recipient name and address.',
       errSender:'Fill in your name and email.',
       redirecting:'Redirecting to secure payment…',
+      loadingPayment:'Preparing payment…', processingPayment:'Processing payment…',
+      errPayment:'Something went wrong with the payment. Please try again.',
+      errStripeLoad:'Payment system failed to load. Please check your connection and try again.',
+      errStripeConfig:'Payments are not configured yet. Please try again later.',
+      paymentTitle:'Pay securely', paymentSub:'Enter your card details below. This never touches our servers.',
+      editDetailsLabel:'Edit your details',
+      successTitle:'The gesture is on its way.', successSub:"Payment confirmed. We're hand-packing the box now — check your email for the receipt.",
+      continueToPaymentBtn:'Continue to payment →',
       startGift:'Start your gift →', continueGift:'Continue your gift →', finishPay:'Finish & pay {price} →',
       deliveryCtaTitle:'Ready when you are', deliveryCtaSub:"Checking delivery, picking a box and paying all happen in one quick flow — no digging through the page.",
       noteCtaBtn:'Start your gift →',
@@ -305,6 +334,14 @@ translate(current);
       errRecipient:'Preencha o nome e o endereço de quem vai receber.',
       errSender:'Preencha seu nome e e-mail.',
       redirecting:'Redirecionando para o pagamento seguro…',
+      loadingPayment:'Preparando pagamento…', processingPayment:'Processando pagamento…',
+      errPayment:'Algo deu errado com o pagamento. Tente novamente.',
+      errStripeLoad:'O sistema de pagamento não carregou. Verifique sua conexão e tente novamente.',
+      errStripeConfig:'Os pagamentos ainda não estão configurados. Tente novamente mais tarde.',
+      paymentTitle:'Pague com segurança', paymentSub:'Digite os dados do cartão abaixo. Isso nunca passa pelos nossos servidores.',
+      editDetailsLabel:'Editar seus dados',
+      successTitle:'O gesto já está a caminho.', successSub:'Pagamento confirmado. Estamos montando a caixa agora — confira seu e-mail para o recibo.',
+      continueToPaymentBtn:'Continuar para o pagamento →',
       startGift:'Comece seu presente →', continueGift:'Continuar seu presente →', finishPay:'Finalizar e pagar {price} →',
       deliveryCtaTitle:'Pronto quando você estiver', deliveryCtaSub:'Conferir a entrega, escolher a caixa e pagar acontece tudo num fluxo rápido só — sem precisar procurar pela página.',
       noteCtaBtn:'Comece seu presente →',
@@ -335,6 +372,14 @@ translate(current);
       errRecipient:'Completa el nombre y la dirección de quien recibe.',
       errSender:'Completa tu nombre y correo.',
       redirecting:'Redirigiendo al pago seguro…',
+      loadingPayment:'Preparando el pago…', processingPayment:'Procesando el pago…',
+      errPayment:'Algo salió mal con el pago. Inténtalo de nuevo.',
+      errStripeLoad:'El sistema de pago no cargó. Revisa tu conexión e inténtalo de nuevo.',
+      errStripeConfig:'Los pagos aún no están configurados. Inténtalo de nuevo más tarde.',
+      paymentTitle:'Paga de forma segura', paymentSub:'Ingresa los datos de tu tarjeta abajo. Esto nunca pasa por nuestros servidores.',
+      editDetailsLabel:'Editar tus datos',
+      successTitle:'El gesto ya está en camino.', successSub:'Pago confirmado. Estamos armando la caja ahora — revisa tu correo para el recibo.',
+      continueToPaymentBtn:'Continuar al pago →',
       startGift:'Comienza tu regalo →', continueGift:'Continuar tu regalo →', finishPay:'Finalizar y pagar {price} →',
       deliveryCtaTitle:'Listos cuando tú lo estés', deliveryCtaSub:'Revisar la entrega, elegir la caja y pagar sucede en un solo flujo rápido — sin tener que buscar por la página.',
       noteCtaBtn:'Comienza tu regalo →',
@@ -364,6 +409,10 @@ translate(current);
     set('lbl-street', s.lblStreet); set('lbl-city', s.lblCity); set('lbl-state', s.lblState);
     set('lbl-senderName', s.lblSenderName); set('lbl-senderEmail', s.lblSenderEmail); set('lbl-senderPhone', s.lblSenderPhone);
     set('pay-btn', s.payBtn); set('trust-line', s.trust);
+    set('continue-to-payment-btn', s.continueToPaymentBtn);
+    set('payment-title', s.paymentTitle); set('payment-sub', s.paymentSub);
+    set('edit-details-label', s.editDetailsLabel);
+    set('success-title', s.successTitle); set('success-sub', s.successSub);
     set('modal-back-btn', s.back); set('modal-continue-btn', s.continueBtn);
     set('delivery-cta-title', s.deliveryCtaTitle); set('delivery-cta-sub', s.deliveryCtaSub);
     set('delivery-cta-btn', s.startGift); set('note-cta-btn', s.noteCtaBtn);
@@ -416,11 +465,21 @@ translate(current);
     });
     backBtn.hidden = n === 1;
     continueBtn.hidden = n === 4;
+    if(n === 4) resetStep4View();
     refreshModalSummary();
     refreshBar();
     saveDraft();
     const body = document.querySelector('.order-modal-body');
     if(body) body.scrollTop = 0;
+  }
+
+  function resetStep4View(){
+    const details = document.getElementById('step4-details');
+    const payment = document.getElementById('step4-payment');
+    const success = document.getElementById('step4-success');
+    if(details) details.hidden = false;
+    if(payment) payment.hidden = true;
+    if(success) success.hidden = true;
   }
 
   function shakeModal(){
@@ -434,7 +493,15 @@ translate(current);
   document.getElementById('order-modal-backdrop').addEventListener('click', closeModal);
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
 
-  backBtn.addEventListener('click', () => goToStep(Math.max(1, state.currentStep - 1)));
+  backBtn.addEventListener('click', () => {
+    const paymentView = document.getElementById('step4-payment');
+    if(state.currentStep === 4 && paymentView && !paymentView.hidden){
+      paymentView.hidden = true;
+      document.getElementById('step4-details').hidden = false;
+      return;
+    }
+    goToStep(Math.max(1, state.currentStep - 1));
+  });
 
   continueBtn.addEventListener('click', () => {
     if(state.currentStep === 1){
@@ -626,22 +693,40 @@ translate(current);
     el.addEventListener('click', e => { e.preventDefault(); openModal(1); });
   });
 
-  // ---------- pay button ----------
-  function showCheckoutError(msg){
-    const el = document.getElementById('checkout-error');
+  // ---------- step 4: details -> embedded Stripe payment ----------
+  function showError(elId, msg){
+    const el = document.getElementById(elId);
     el.textContent = msg;
     el.classList.add('show');
   }
-  function clearCheckoutError(){
-    const el = document.getElementById('checkout-error');
+  function clearError(elId){
+    const el = document.getElementById(elId);
     el.textContent = '';
     el.classList.remove('show');
   }
 
-  const payBtn = document.getElementById('pay-btn');
-  if(payBtn) payBtn.addEventListener('click', async () => {
+  let stripeClient = null;
+  let stripeElements = null;
+  let currentOrderId = null;
+
+  async function getStripeClient(){
+    if(stripeClient) return stripeClient;
+    if(typeof Stripe === 'undefined') throw new Error(t().errStripeLoad);
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    if(!data.publishableKey) throw new Error(t().errStripeConfig);
+    stripeClient = Stripe(data.publishableKey);
+    return stripeClient;
+  }
+
+  const detailsView = document.getElementById('step4-details');
+  const paymentView = document.getElementById('step4-payment');
+  const successView = document.getElementById('step4-success');
+
+  const continueToPaymentBtn = document.getElementById('continue-to-payment-btn');
+  if(continueToPaymentBtn) continueToPaymentBtn.addEventListener('click', async () => {
     const s = t();
-    clearCheckoutError();
+    clearError('details-error');
 
     if(!state.packageName){ goToStep(1); return; }
     const day = document.querySelector('.day-choice.selected');
@@ -661,19 +746,19 @@ translate(current);
     const senderPhone = document.getElementById('senderPhone').value.trim();
 
     if(!recipientName || !recipientAddress){
-      showCheckoutError(s.errRecipient);
+      showError('details-error', s.errRecipient);
       document.getElementById('recipientName').focus();
       return;
     }
     if(!senderName || !senderEmail){
-      showCheckoutError(s.errSender);
+      showError('details-error', s.errSender);
       document.getElementById('senderName').focus();
       return;
     }
 
-    payBtn.disabled = true;
-    const originalLabel = payBtn.textContent;
-    payBtn.textContent = s.redirecting;
+    continueToPaymentBtn.disabled = true;
+    const originalLabel = continueToPaymentBtn.textContent;
+    continueToPaymentBtn.textContent = s.loadingPayment;
 
     try {
       const orderRes = await fetch('/api/orders', {
@@ -689,19 +774,84 @@ translate(current);
       });
       const orderData = await orderRes.json();
       if(!orderRes.ok) throw new Error(orderData.error || 'Could not save your order.');
+      currentOrderId = orderData.orderId;
 
-      const sessionRes = await fetch('/api/checkout-session', {
+      const stripe = await getStripeClient();
+      const piRes = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ orderId: orderData.orderId }),
+        body: JSON.stringify({ orderId: currentOrderId }),
       });
-      const sessionData = await sessionRes.json();
-      if(!sessionRes.ok) throw new Error(sessionData.error || 'Could not start checkout.');
+      const piData = await piRes.json();
+      if(!piRes.ok) throw new Error(piData.error || 'Could not start payment.');
 
-      try { sessionStorage.removeItem(STORE_KEY); } catch(e){}
-      window.location.href = sessionData.url;
+      const appearance = {
+        theme: 'stripe',
+        variables: {
+          colorPrimary: '#b93632',
+          colorBackground: '#fffaf2',
+          colorText: '#17120f',
+          fontFamily: 'DM Sans, Arial, sans-serif',
+          borderRadius: '4px',
+        },
+      };
+      const localeMap = { pt: 'pt-BR', es: 'es-419', en: 'en' };
+      stripeElements = stripe.elements({ clientSecret: piData.clientSecret, appearance, locale: localeMap[currentLang()] || 'en' });
+      const paymentElement = stripeElements.create('payment');
+      document.getElementById('payment-element').innerHTML = '';
+      paymentElement.mount('#payment-element');
+
+      detailsView.hidden = true;
+      paymentView.hidden = false;
+      saveDraft();
     } catch(err){
-      showCheckoutError(err.message || 'Something went wrong. Please try again.');
+      showError('details-error', err.message || 'Something went wrong. Please try again.');
+    } finally {
+      continueToPaymentBtn.disabled = false;
+      continueToPaymentBtn.textContent = originalLabel;
+    }
+  });
+
+  const editDetailsBtn = document.getElementById('edit-details-btn');
+  if(editDetailsBtn) editDetailsBtn.addEventListener('click', () => {
+    paymentView.hidden = true;
+    detailsView.hidden = false;
+  });
+
+  const payBtn = document.getElementById('pay-btn');
+  if(payBtn) payBtn.addEventListener('click', async () => {
+    const s = t();
+    clearError('checkout-error');
+    if(!stripeClient || !stripeElements) return;
+
+    payBtn.disabled = true;
+    const originalLabel = payBtn.textContent;
+    payBtn.textContent = s.processingPayment;
+
+    try {
+      const result = await stripeClient.confirmPayment({
+        elements: stripeElements,
+        confirmParams: {
+          return_url: `${window.location.origin}/success.html?order_id=${currentOrderId}`,
+          receipt_email: document.getElementById('senderEmail').value.trim(),
+        },
+        redirect: 'if_required',
+      });
+
+      if(result.error){
+        showError('checkout-error', result.error.message || s.errPayment);
+        payBtn.disabled = false;
+        payBtn.textContent = originalLabel;
+        return;
+      }
+
+      // No redirect was needed (most cards) - show the confirmation right here.
+      try { sessionStorage.removeItem(STORE_KEY); } catch(e){}
+      paymentView.hidden = true;
+      successView.hidden = false;
+      backBtn.hidden = true;
+    } catch(err){
+      showError('checkout-error', err.message || s.errPayment);
       payBtn.disabled = false;
       payBtn.textContent = originalLabel;
     }

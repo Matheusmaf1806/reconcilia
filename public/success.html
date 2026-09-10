@@ -29,18 +29,18 @@
   </div>
   <script>
     const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
+    const paymentIntentId = params.get('payment_intent');
     const titleEl = document.getElementById('title');
     const msgEl = document.getElementById('message');
     const detailsEl = document.getElementById('details');
 
     async function poll(attempt){
-      if(!sessionId){
+      if(!paymentIntentId){
         msgEl.textContent = 'We could not find your order reference. If you completed a payment, check your email for the receipt.';
         return;
       }
       try{
-        const res = await fetch('/api/orders/session/' + encodeURIComponent(sessionId));
+        const res = await fetch('/api/orders/by-payment-intent/' + encodeURIComponent(paymentIntentId));
         if(!res.ok) throw new Error();
         const order = await res.json();
 

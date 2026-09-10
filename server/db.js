@@ -76,29 +76,29 @@ async function createOrder(order) {
   return result.rows[0].id;
 }
 
-async function attachStripeSession(orderId, sessionId) {
+async function attachPaymentIntent(orderId, paymentIntentId) {
   await ensureSchema();
   await pool.query(
-    `UPDATE orders SET stripe_session_id = $1, updated_at = now() WHERE id = $2`,
-    [sessionId, orderId]
+    `UPDATE orders SET stripe_payment_intent_id = $1, updated_at = now() WHERE id = $2`,
+    [paymentIntentId, orderId]
   );
 }
 
-async function markPaidBySessionId(sessionId, { paymentIntentId, amountTotal, currency }) {
+async function markPaidByPaymentIntentId(paymentIntentId, { amountReceived, currency }) {
   await ensureSchema();
   await pool.query(
     `UPDATE orders
-     SET status = 'paid', stripe_payment_intent_id = $1, amount_total = $2, currency = $3, updated_at = now()
-     WHERE stripe_session_id = $4`,
-    [paymentIntentId, amountTotal, currency, sessionId]
+     SET status = 'paid', amount_total = $1, currency = $2, updated_at = now()
+     WHERE stripe_payment_intent_id = $3`,
+    [amountReceived, currency, paymentIntentId]
   );
 }
 
-async function markStatusBySessionId(sessionId, status) {
+async function markStatusByPaymentIntentId(paymentIntentId, status) {
   await ensureSchema();
   await pool.query(
-    `UPDATE orders SET status = $1, updated_at = now() WHERE stripe_session_id = $2`,
-    [status, sessionId]
+    `UPDATE orders SET status = $1, updated_at = now() WHERE stripe_payment_intent_id = $2`,
+    [status, paymentIntentId]
   );
 }
 
@@ -108,9 +108,9 @@ async function getOrderById(id) {
   return result.rows[0] || null;
 }
 
-async function getOrderBySessionId(sessionId) {
+async function getOrderByPaymentIntentId(paymentIntentId) {
   await ensureSchema();
-  const result = await pool.query(`SELECT * FROM orders WHERE stripe_session_id = $1`, [sessionId]);
+  const result = await pool.query(`SELECT * FROM orders WHERE stripe_payment_intent_id = $1`, [paymentIntentId]);
   return result.rows[0] || null;
 }
 
@@ -123,10 +123,10 @@ async function listOrders() {
 module.exports = {
   pool,
   createOrder,
-  attachStripeSession,
-  markPaidBySessionId,
-  markStatusBySessionId,
+  attachPaymentIntent,
+  markPaidByPaymentIntentId,
+  markStatusByPaymentIntentId,
   getOrderById,
-  getOrderBySessionId,
+  getOrderByPaymentIntentId,
   listOrders,
 };

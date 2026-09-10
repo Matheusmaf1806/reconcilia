@@ -11,10 +11,14 @@ const { getPackage } = require('./packages');
 const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
 if (!STRIPE_SECRET_KEY) {
   console.warn('[warn] STRIPE_SECRET_KEY is not set. Checkout will fail until you add it to .env');
+}
+if (!STRIPE_PUBLISHABLE_KEY) {
+  console.warn('[warn] STRIPE_PUBLISHABLE_KEY is not set. The embedded card form will fail to load until you add it to .env');
 }
 
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
@@ -41,18 +45,22 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        await db.markPaidBySessionId(session.id, {
-          paymentIntentId: session.payment_intent,
-          amountTotal: session.amount_total,
-          currency: session.currency,
+      case 'payment_intent.succeeded': {
+        const intent = event.data.object;
+        await db.markPaidByPaymentIntentId(intent.id, {
+          amountReceived: intent.amount_received,
+          currency: intent.currency,
         });
         break;
       }
-      case 'checkout.session.expired': {
-        const session = event.data.object;
-        await db.markStatusBySessionId(session.id, 'expired');
+      case 'payment_intent.payment_failed': {
+        const intent = event.data.object;
+        await db.markStatusByPaymentIntentId(intent.id, 'failed');
+        break;
+      }
+      case 'payment_intent.canceled': {
+        const intent = event.data.object;
+        await db.markStatusByPaymentIntentId(intent.id, 'canceled');
         break;
       }
       default:
@@ -67,6 +75,10 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+app.get('/api/config', (req, res) => {
+  res.json({ publishableKey: STRIPE_PUBLISHABLE_KEY || null });
+});
 
 // ---------- Public order + checkout API ----------
 
@@ -128,7 +140,7 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-app.post('/api/checkout-session', async (req, res) => {
+app.post('/api/create-payment-intent', async (req, res) => {
   if (!stripe) {
     return res.status(500).json({ error: 'Payments are not configured yet. Set STRIPE_SECRET_KEY in .env.' });
   }
@@ -141,38 +153,37 @@ app.post('/api/checkout-session', async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Order not found.' });
     if (order.status === 'paid') return res.status(400).json({ error: 'This order has already been paid.' });
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      customer_email: order.sender_email,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'usd',
-            unit_amount: order.price_cents,
-            product_data: {
-              name: `Reconcilia — ${order.package_name}`,
-              description: `Delivery to ${order.recipient_name}, ZIP ${order.recipient_zip}`,
-            },
-          },
-        },
-      ],
-      metadata: { order_id: String(order.id) },
-      success_url: `${PUBLIC_BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${PUBLIC_BASE_URL}/cancel.html`,
-    });
+    let intent;
+    if (order.stripe_payment_intent_id) {
+      // Reusing an existing PaymentIntent (e.g. the customer went back and forth
+      // between steps) avoids creating a new one - and a new client secret -
+      // on every visit to the payment step.
+      intent = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
+      if (intent.status === 'canceled') intent = null;
+    }
 
-    await db.attachStripeSession(orderId, session.id);
-    res.json({ url: session.url });
+    if (!intent) {
+      intent = await stripe.paymentIntents.create({
+        amount: order.price_cents,
+        currency: 'usd',
+        receipt_email: order.sender_email,
+        description: `Reconcilia — ${order.package_name} — delivery to ${order.recipient_name}, ZIP ${order.recipient_zip}`,
+        metadata: { order_id: String(order.id) },
+        automatic_payment_methods: { enabled: true },
+      });
+      await db.attachPaymentIntent(orderId, intent.id);
+    }
+
+    res.json({ clientSecret: intent.client_secret });
   } catch (err) {
-    console.error('Failed to create checkout session:', err.message);
-    res.status(500).json({ error: 'Could not start checkout. Please try again.' });
+    console.error('Failed to create payment intent:', err.message);
+    res.status(500).json({ error: 'Could not start payment. Please try again.' });
   }
 });
 
-app.get('/api/orders/session/:sessionId', async (req, res) => {
+app.get('/api/orders/by-payment-intent/:id', async (req, res) => {
   try {
-    const order = await db.getOrderBySessionId(req.params.sessionId);
+    const order = await db.getOrderByPaymentIntentId(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found.' });
 
     res.json({

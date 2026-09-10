@@ -7,18 +7,22 @@ and get paid — deployable on Vercel.
 
 ## What's included
 
-- **Landing page** (`public/index.html`) — the original design, with a real
-  guided checkout flow bolted on: pick a box → check delivery ZIP/day/time →
-  write your note → fill in recipient + your details → pay with Stripe.
-  A sticky bottom bar always shows the next step and the running total.
-  Fully localized (EN/ES/PT).
-- **Checkout** — Stripe Checkout (hosted, PCI-compliant). We never see or
-  store card numbers; Stripe handles that entirely.
+- **Landing page** (`public/index.html`) — the original design, with a
+  4-step checkout modal bolted on: **Box → Delivery → Message → Pay**. Every
+  "buy" entry point on the page opens it; no scrolling around the page is
+  needed to complete an order. A sticky bottom button always resumes exactly
+  where the customer left off. Fully localized (EN/ES/PT).
+- **Checkout** — the card form (Stripe Elements' Payment Element) is embedded
+  directly in the last step, styled to match the site. There is no redirect
+  to a separate Stripe-hosted page; the only time the browser leaves is the
+  rare case where a card requires 3D Secure authentication, and it returns
+  right back to `success.html`. We never see or store card numbers — Stripe's
+  iframe handles that entirely.
 - **Backend** (`server/`) — Node.js + Express + Postgres. Validates orders,
-  creates Stripe Checkout Sessions, and listens for the `checkout.session.completed`
-  webhook to mark orders paid. Runs as a normal server locally (`server/index.js`)
-  and as a Vercel serverless function in production (`api/index.js`) from the
-  same Express app (`server/app.js`).
+  creates a Stripe PaymentIntent per order, and listens for the
+  `payment_intent.succeeded` webhook to mark it paid. Runs as a normal server
+  locally (`server/index.js`) and as a Vercel serverless function in
+  production (`api/index.js`) from the same Express app (`server/app.js`).
 - **Admin panel** (`/admin`, protected by HTTP basic auth) — a list of every
   order (paid, pending, expired) with revenue stats, and a detail view per
   order showing the package, the recipient's address, the delivery window,
@@ -37,8 +41,9 @@ Edit `.env`:
 
 ```
 DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME
-STRIPE_SECRET_KEY=sk_test_...       # from https://dashboard.stripe.com/test/apikeys
-STRIPE_WEBHOOK_SECRET=whsec_...     # see below
+STRIPE_SECRET_KEY=sk_test_...          # from https://dashboard.stripe.com/test/apikeys
+STRIPE_PUBLISHABLE_KEY=pk_test_...     # same page - this one is safe to expose to the browser
+STRIPE_WEBHOOK_SECRET=whsec_...        # see below
 ADMIN_USER=admin
 ADMIN_PASSWORD=pick-a-real-password
 ```
@@ -68,12 +73,13 @@ local server and the order flips to "paid" automatically.
 
 ### Try it
 
-1. Open `http://localhost:3000`, pick a box, check ZIP `32801`, pick a day/time,
-   fill in the delivery + payment form, click Pay.
-2. On Stripe's checkout page use test card `4242 4242 4242 4242`, any future
-   expiry, any CVC.
-3. You'll land on `/success.html` with your order confirmed.
-4. Open `http://localhost:3000/admin` (login with `ADMIN_USER`/`ADMIN_PASSWORD`)
+1. Open `http://localhost:3000` and click any "buy" button — the checkout
+   modal opens. Step through: pick a box, check ZIP `32801` and pick a
+   day/time, write a message, fill in the delivery + your details.
+2. On the last step, the card form is right there in the modal. Use Stripe's
+   test card `4242 4242 4242 4242`, any future expiry, any CVC, then click
+   Pay — you'll see the confirmation right in the modal, no redirect.
+3. Open `http://localhost:3000/admin` (login with `ADMIN_USER`/`ADMIN_PASSWORD`)
    to see the order, its note, address and delivery window.
 
 ## Deploying to Vercel
@@ -108,7 +114,8 @@ In **Settings → Environment Variables**, add:
 
 | Variable | Value |
 |---|---|
-| `STRIPE_SECRET_KEY` | Your live (or test) key from the Stripe Dashboard |
+| `STRIPE_SECRET_KEY` | Your live (or test) secret key from the Stripe Dashboard |
+| `STRIPE_PUBLISHABLE_KEY` | The matching publishable key (same page) — powers the embedded card form |
 | `STRIPE_WEBHOOK_SECRET` | See step 4 below |
 | `PUBLIC_BASE_URL` | `https://your-project.vercel.app` (or your custom domain) |
 | `ADMIN_USER` | Whatever you want to log into `/admin` with |
@@ -122,7 +129,8 @@ already-built deployment).
 In the [Stripe Dashboard](https://dashboard.stripe.com/webhooks) → **Add
 endpoint**:
 - URL: `https://your-project.vercel.app/api/webhook`
-- Events: `checkout.session.completed` (and optionally `checkout.session.expired`)
+- Events: `payment_intent.succeeded` (optionally also `payment_intent.payment_failed`
+  and `payment_intent.canceled` to track those states)
 
 Stripe shows you a signing secret (`whsec_...`) — put that in the
 `STRIPE_WEBHOOK_SECRET` env var on Vercel and redeploy.
@@ -130,9 +138,9 @@ Stripe shows you a signing secret (`whsec_...`) — put that in the
 ### 5. Test it for real
 
 Place a test order on your live URL with Stripe's test card
-`4242 4242 4242 4242`, then check `https://your-project.vercel.app/admin` —
-the order should show up as "paid" within a couple seconds of completing
-checkout.
+`4242 4242 4242 4242` right in the embedded card form, then check
+`https://your-project.vercel.app/admin` — the order should show up as
+"paid" within a couple seconds of completing checkout.
 
 ### Custom domain
 
@@ -142,16 +150,17 @@ to match and redeploy (it's used to build the Stripe success/cancel links).
 ## How pricing works
 
 Prices are defined **server-side only**, in `server/packages.js`. The
-client never gets to set a price — `POST /api/checkout-session` always looks
-up the price from the order's package name before creating the Stripe
-session. To change prices or add a box, edit `server/packages.js`, the
+client never gets to set a price — `POST /api/create-payment-intent` always
+looks up the price from the order's package name before creating the
+PaymentIntent. To change prices or add a box, edit `server/packages.js`, the
 `PRICES` map inside `public/index.html`'s checkout script, and the package
-cards' markup/prices in the same file.
+cards' / modal box-choice markup in the same file.
 
 ## Security notes
 
-- Card data never touches this server — Stripe Checkout collects it on
-  Stripe's own hosted page.
+- Card data never touches this server — the Payment Element is Stripe's own
+  iframe, embedded in the page but isolated from it (PCI SAQ A eligible),
+  even though it's styled to match the site.
 - The webhook endpoint verifies Stripe's signature before trusting any
   "payment completed" event.
 - The admin panel is behind HTTP Basic Auth. Use a strong password — Vercel
@@ -174,9 +183,8 @@ server/
 admin-panel/
   index.html     Admin UI (served only behind basic auth, not under public/)
 public/
-  index.html     The landing page + checkout flow
-  success.html   Post-payment confirmation
-  cancel.html    Shown if checkout is canceled
+  index.html     The landing page + checkout modal
+  success.html   Fallback confirmation page for the rare 3D Secure redirect
   images/        Product photos
 vercel.json      Routes /api/* and /admin* to the serverless function
 ```
