@@ -80,6 +80,30 @@ app.get('/api/config', (req, res) => {
   res.json({ publishableKey: STRIPE_PUBLISHABLE_KEY || null });
 });
 
+// Diagnostics for deployment troubleshooting. Reports whether required
+// config is present and whether the database is actually reachable -
+// without ever exposing the secret values themselves.
+app.get('/api/health', async (req, res) => {
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+  let database = 'not_configured';
+  if (hasDatabaseUrl) {
+    try {
+      await db.pool.query('SELECT 1');
+      database = 'connected';
+    } catch (err) {
+      database = 'error: ' + err.message;
+    }
+  }
+  res.json({
+    database,
+    stripeSecretKey: STRIPE_SECRET_KEY ? 'set' : 'missing',
+    stripePublishableKey: STRIPE_PUBLISHABLE_KEY ? 'set' : 'missing',
+    stripeWebhookSecret: STRIPE_WEBHOOK_SECRET ? 'set' : 'missing',
+    adminUser: process.env.ADMIN_USER ? 'set' : 'using default (admin)',
+    adminPassword: process.env.ADMIN_PASSWORD ? 'set' : 'using default (insecure!)',
+  });
+});
+
 // ---------- Public order + checkout API ----------
 
 function isNonEmptyString(v, maxLen = 500) {
