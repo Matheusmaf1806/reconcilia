@@ -192,7 +192,7 @@ I just wanted to remind you that I love you, and that you mean the world to me.<
             <h3 id="details-title">Delivery + your details</h3>
             <p class="step-sub" id="details-sub">We deliver to the ZIP code you checked above.</p>
             <div class="recipient-block">
-              <div class="detail-section-label">🎁 <span id="lbl-recipient-section">Who's receiving this</span></div>
+              <div class="detail-section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="3" y="8" width="18" height="13" rx="1"></rect><path d="M3 8h18M12 8v13M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></svg> <span id="lbl-recipient-section">Who's receiving this</span></div>
               <div class="form-row"><div class="field"><label id="lbl-recipientName">Recipient full name</label><input id="recipientName" type="text" placeholder="Her name" autocomplete="shipping name"></div><div class="field"><label id="lbl-recipientPhone">Recipient phone (optional)</label><input id="recipientPhone" type="tel" placeholder="(407) 555-0134" autocomplete="shipping tel"></div></div>
               <div class="field"><label id="lbl-street">Street address</label><input id="recipientAddress" type="text" placeholder="123 Main St, Apt 4B" autocomplete="shipping street-address"></div>
               <div class="form-row"><div class="field"><label id="lbl-city">City</label><input id="recipientCity" type="text" value="Orlando" autocomplete="shipping address-level2"></div><div class="field"><label id="lbl-state">State</label><input id="recipientState" type="text" value="FL" maxlength="2" autocomplete="shipping address-level1"></div></div>
@@ -213,7 +213,7 @@ I just wanted to remind you that I love you, and that you mean the world to me.<
             <div id="payment-element"></div>
             <div id="checkout-error" class="result" role="alert" aria-live="assertive" style="background:#fbe4e2;border-left-color:var(--red)"></div>
             <button class="btn red" id="pay-btn" style="width:100%;justify-content:center;margin-top:16px">Pay securely →</button>
-            <p id="trust-line" style="font-size:11px;color:var(--muted);margin-top:10px">🔒 Payment is processed by Stripe. We never see or store your card details.</p>
+            <p id="trust-line" style="font-size:11px;color:var(--muted);margin-top:10px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg><span id="trust-line-text">Payment is processed by Stripe. We never see or store your card details.</span></p>
           </div>
           <div id="step4-success" hidden>
             <div class="success-seal">✓</div>
@@ -304,7 +304,7 @@ translate(current);
       lblSenderEmail:'Your email (for the receipt)', phEmail:'you@email.com',
       lblSenderPhone:'Your phone (optional)',
       payBtn:'Pay securely →',
-      trust:'🔒 Payment is processed by Stripe. We never see or store your card details.',
+      trust:'Payment is processed by Stripe. We never see or store your card details.',
       back:'← Back', continueBtn:'Continue →',
       errRecipient:'Fill in the recipient name and address.',
       errSender:'Fill in your name and email.',
@@ -341,7 +341,7 @@ translate(current);
       lblSenderEmail:'Seu e-mail (para o recibo)', phEmail:'voce@email.com',
       lblSenderPhone:'Seu telefone (opcional)',
       payBtn:'Pagar com segurança →',
-      trust:'🔒 O pagamento é processado pelo Stripe. Nunca vemos nem guardamos os dados do seu cartão.',
+      trust:'O pagamento é processado pelo Stripe. Nunca vemos nem guardamos os dados do seu cartão.',
       back:'← Voltar', continueBtn:'Continuar →',
       errRecipient:'Preencha o nome e o endereço de quem vai receber.',
       errSender:'Preencha seu nome e e-mail.',
@@ -378,7 +378,7 @@ translate(current);
       lblSenderEmail:'Tu correo (para el recibo)', phEmail:'tu@correo.com',
       lblSenderPhone:'Tu teléfono (opcional)',
       payBtn:'Pagar de forma segura →',
-      trust:'🔒 El pago es procesado por Stripe. Nunca vemos ni guardamos los datos de tu tarjeta.',
+      trust:'El pago es procesado por Stripe. Nunca vemos ni guardamos los datos de tu tarjeta.',
       back:'← Atrás', continueBtn:'Continuar →',
       errRecipient:'Completa el nombre y la dirección de quien recibe.',
       errSender:'Completa tu nombre y correo.',
@@ -418,7 +418,7 @@ translate(current);
     set('lbl-recipientName', s.lblRecipientName); set('lbl-recipientPhone', s.lblRecipientPhone);
     set('lbl-street', s.lblStreet); set('lbl-city', s.lblCity); set('lbl-state', s.lblState);
     set('lbl-senderName', s.lblSenderName); set('lbl-senderEmail', s.lblSenderEmail); set('lbl-senderPhone', s.lblSenderPhone);
-    set('pay-btn', s.payBtn); set('trust-line', s.trust);
+    set('pay-btn', s.payBtn); set('trust-line-text', s.trust);
     set('payment-title', s.paymentTitle); set('payment-sub', s.paymentSub);
     set('success-title', s.successTitle); set('success-sub', s.successSub);
     set('modal-back-btn', s.back); set('modal-continue-btn', s.continueBtn);
