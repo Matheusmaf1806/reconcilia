@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Order confirmed — reconcilia</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#17120f;--paper:#f7f2e9;--muted:#7e7064;--red:#b93632;--yellow:#e6b84f;--serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',Arial,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{max-width:520px;width:100%;background:#fffaf2;border:1px solid rgba(23,18,15,.14);border-radius:6px;padding:42px 36px;text-align:center}
+    .seal{width:60px;height:60px;border-radius:50%;background:var(--red);color:#fff4ea;display:grid;place-items:center;margin:0 auto 20px;font-size:26px}
+    h1{font:500 clamp(28px,5vw,38px)/1.1 var(--serif);letter-spacing:-.03em;margin:0 0 14px}
+    p{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 8px}
+    .details{text-align:left;background:var(--paper);border-radius:4px;padding:18px 20px;margin:22px 0;font-size:13px;line-height:1.8}
+    .details b{color:var(--ink)}
+    a.btn{display:inline-block;margin-top:12px;background:var(--ink);color:var(--paper);padding:14px 22px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px}
+    .pending{color:#8f2927}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="seal">✓</div>
+    <h1 id="title">Thank you.</h1>
+    <p id="message">Loading your order confirmation…</p>
+    <div id="details" class="details" hidden></div>
+    <a class="btn" href="/">Back to reconcilia</a>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const titleEl = document.getElementById('title');
+    const msgEl = document.getElementById('message');
+    const detailsEl = document.getElementById('details');
+
+    async function poll(attempt){
+      if(!sessionId){
+        msgEl.textContent = 'We could not find your order reference. If you completed a payment, check your email for the receipt.';
+        return;
+      }
+      try{
+        const res = await fetch('/api/orders/session/' + encodeURIComponent(sessionId));
+        if(!res.ok) throw new Error();
+        const order = await res.json();
+
+        if(order.status === 'paid'){
+          titleEl.textContent = 'The gesture is on its way.';
+          msgEl.textContent = 'Payment confirmed. We are hand-packing the box now.';
+          detailsEl.hidden = false;
+          detailsEl.innerHTML = '';
+          const rows = [
+            ['Box:', order.packageName],
+            ['Delivered to:', order.recipientName],
+            order.deliveryDate ? ['Delivery:', order.deliveryDate + ' · ' + (order.deliveryWindow || '')] : null,
+            order.amountTotal ? ['Total paid:', '$' + (order.amountTotal/100).toFixed(2)] : null,
+          ].filter(Boolean);
+          rows.forEach(([label, value]) => {
+            const row = document.createElement('div');
+            const b = document.createElement('b');
+            b.textContent = label;
+            row.appendChild(b);
+            row.appendChild(document.createTextNode(' ' + value));
+            detailsEl.appendChild(row);
+          });
+          return;
+        }
+
+        if(attempt < 6){
+          msgEl.innerHTML = 'Confirming your payment with Stripe<span class="pending">…</span>';
+          setTimeout(()=>poll(attempt+1), 1500);
+        } else {
+          msgEl.textContent = 'Your payment is still processing. This can take a moment — refresh this page shortly, or check your email for the receipt.';
+        }
+      } catch(err){
+        msgEl.textContent = 'We could not load your order right now. If you completed payment, check your email for the receipt.';
+      }
+    }
+
+    poll(0);
+  </script>
+</body>
+</html>

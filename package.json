@@ -1,0 +1,20 @@
+{
+  "name": "reconcilia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reconcilia gift box landing page with Stripe checkout and admin panel",
+  "type": "commonjs",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhook"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-basic-auth": "^1.2.1",
+    "stripe": "^17.4.0"
+  }
+}

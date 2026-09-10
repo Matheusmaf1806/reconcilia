@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>reconcilia — Orders</title>
+  <style>
+    :root{--ink:#17120f;--paper:#f7f2e9;--paper-2:#eee5d8;--muted:#7e7064;--red:#b93632;--yellow:#e6b84f;--line:rgba(23,18,15,.14);--green:#3f7a3a}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px}
+    header{background:var(--ink);color:var(--paper);padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+    header h1{font-size:18px;margin:0;font-weight:600}
+    header button{background:transparent;border:1px solid rgba(255,255,255,.3);color:var(--paper);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+    main{max-width:1200px;margin:0 auto;padding:24px 28px}
+    .stats{display:flex;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+    .stat{background:#fffaf2;border:1px solid var(--line);border-radius:6px;padding:14px 18px;min-width:140px}
+    .stat b{display:block;font-size:22px}
+    .stat span{color:var(--muted);font-size:12px}
+    table{width:100%;border-collapse:collapse;background:#fffaf2;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+    th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+    th{background:var(--paper-2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    tr:last-child td{border-bottom:0}
+    tr.row{cursor:pointer}
+    tr.row:hover{background:#fff3df}
+    .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+    .badge.paid{background:#e3f0df;color:var(--green)}
+    .badge.pending{background:#fbeecb;color:#8a6a1c}
+    .badge.expired,.badge.canceled{background:#f3dcdb;color:var(--red)}
+    .empty{padding:40px;text-align:center;color:var(--muted)}
+    .overlay{position:fixed;inset:0;background:rgba(23,18,15,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+    .overlay.show{display:flex}
+    .modal{background:var(--paper);border-radius:8px;max-width:560px;width:100%;max-height:85vh;overflow:auto;padding:28px}
+    .modal h2{margin:0 0 4px;font-size:20px}
+    .modal .sub{color:var(--muted);font-size:12px;margin-bottom:18px}
+    .modal dl{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:13px;margin:0}
+    .modal dt{color:var(--muted)}
+    .modal dd{margin:0}
+    .note-block{background:#fff3cf;border-left:3px solid var(--red);padding:12px 14px;margin-top:16px;font-style:italic;white-space:pre-wrap}
+    .modal-close{float:right;background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
+    .refresh{background:var(--ink);color:var(--paper);border:0;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:14px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>reconcilia — Orders</h1>
+    <button onclick="location.reload()">Refresh</button>
+  </header>
+  <main>
+    <div id="stats" class="stats"></div>
+    <div id="content">Loading orders…</div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    function fmtMoney(cents, currency){
+      if(cents === null || cents === undefined) return '—';
+      return '$' + (cents/100).toFixed(2) + ' ' + (currency ? currency.toUpperCase() : '');
+    }
+    function fmtDate(iso){
+      if(!iso) return '—';
+      return new Date(iso.replace(' ', 'T') + 'Z').toLocaleString();
+    }
+    function esc(s){
+      const d = document.createElement('div');
+      d.textContent = s == null ? '' : String(s);
+      return d.innerHTML;
+    }
+
+    let orders = [];
+
+    async function load(){
+      const res = await fetch('/api/admin/orders');
+      if(res.status === 401){ document.getElementById('content').innerHTML = '<div class="empty">Not authorized.</div>'; return; }
+      orders = await res.json();
+      renderStats();
+      renderTable();
+    }
+
+    function renderStats(){
+      const paid = orders.filter(o => o.status === 'paid');
+      const revenue = paid.reduce((sum, o) => sum + (o.amount_total || o.price_cents || 0), 0);
+      const stats = [
+        { label: 'Total orders', value: orders.length },
+        { label: 'Paid orders', value: paid.length },
+        { label: 'Pending / abandoned', value: orders.length - paid.length },
+        { label: 'Revenue (paid)', value: '$' + (revenue/100).toFixed(2) },
+      ];
+      document.getElementById('stats').innerHTML = stats.map(s =>
+        `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`
+      ).join('');
+    }
+
+    function renderTable(){
+      const content = document.getElementById('content');
+      if(!orders.length){
+        content.innerHTML = '<div class="empty">No orders yet.</div>';
+        return;
+      }
+      const rows = orders.map(o => `
+        <tr class="row" onclick="openModal(${o.id})">
+          <td>#${o.id}</td>
+          <td>${fmtDate(o.created_at)}</td>
+          <td>${esc(o.package_name)}</td>
+          <td>${fmtMoney(o.amount_total || o.price_cents, o.currency || 'usd')}</td>
+          <td>${esc(o.recipient_name)}<br><span style="color:var(--muted);font-size:11px">${esc(o.recipient_zip)}</span></td>
+          <td><span class="badge ${esc(o.status)}">${esc(o.status)}</span></td>
+        </tr>
+      `).join('');
+      content.innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>Date</th><th>Box</th><th>Amount</th><th>Recipient</th><th>Status</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    async function openModal(id){
+      const res = await fetch('/api/admin/orders/' + id);
+      if(!res.ok) return;
+      const o = await res.json();
+      document.getElementById('modal-body').innerHTML = `
+        <h2>Order #${o.id} — ${esc(o.package_name)}</h2>
+        <div class="sub">${fmtDate(o.created_at)} · <span class="badge ${esc(o.status)}">${esc(o.status)}</span></div>
+        <dl>
+          <dt>Amount</dt><dd>${fmtMoney(o.amount_total || o.price_cents, o.currency || 'usd')}</dd>
+          <dt>Recipient</dt><dd>${esc(o.recipient_name)}${o.recipient_phone ? ' · ' + esc(o.recipient_phone) : ''}</dd>
+          <dt>Address</dt><dd>${esc(o.recipient_address)}${o.recipient_city ? ', ' + esc(o.recipient_city) : ''}${o.recipient_state ? ', ' + esc(o.recipient_state) : ''} ${esc(o.recipient_zip)}</dd>
+          <dt>Delivery</dt><dd>${esc(o.delivery_date) || '—'} · ${esc(o.delivery_window) || '—'}</dd>
+          <dt>Sender</dt><dd>${esc(o.sender_name)} · ${esc(o.sender_email)}${o.sender_phone ? ' · ' + esc(o.sender_phone) : ''}</dd>
+          <dt>Stripe session</dt><dd style="word-break:break-all">${esc(o.stripe_session_id) || '—'}</dd>
+          <dt>Payment intent</dt><dd style="word-break:break-all">${esc(o.stripe_payment_intent_id) || '—'}</dd>
+        </dl>
+        <div class="note-block">“${esc(o.note)}”</div>
+      `;
+      document.getElementById('overlay').classList.add('show');
+    }
+
+    function closeModal(){
+      document.getElementById('overlay').classList.remove('show');
+    }
+    document.getElementById('overlay').addEventListener('click', e=>{
+      if(e.target.id === 'overlay') closeModal();
+    });
+
+    load();
+  </script>
+</body>
+</html>
