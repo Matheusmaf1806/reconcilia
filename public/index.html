@@ -92,6 +92,9 @@ body.modal-open .order-bar,body.modal-open .toast{display:none!important}
 .success-seal{width:56px;height:56px;border-radius:50%;background:var(--red);color:#fff4ea;display:grid;place-items:center;font-size:26px;margin:8px auto 20px}
 #step4-success{text-align:center;padding:20px 0}
 #step4-success h3{margin-bottom:8px}
+.detail-section-label{display:flex;align-items:center;gap:7px;font:700 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--red);margin:0 0 12px}
+.recipient-block{background:#fff0e7;border:1.5px solid var(--red);border-radius:6px;padding:16px 16px 2px;margin-bottom:22px}
+.sender-block .detail-section-label{color:var(--muted);margin-top:2px}
 </style>
 <script src="https://js.stripe.com/v3/"></script>
 </head>
@@ -108,7 +111,7 @@ body.modal-open .order-bar,body.modal-open .toast{display:none!important}
     <section class="moments-section"><div class="wrap"><div class="moments-inner"><div><div class="eyebrow">made for real life</div><h2>Whatever the reason,<br>make it feel intentional.</h2><p>Not every gift needs a holiday. Sometimes you just know the moment needs more than a text.</p></div><div class="moment-list"><div><span>01</span><b>“I messed up.”</b><small>A thoughtful apology without another awkward paragraph.</small></div><div><span>02</span><b>“I miss you.”</b><small>A little comfort for someone who is far away or having a hard week.</small></div><div><span>03</span><b>“I am thinking of you.”</b><small>No occasion required. That is what makes it memorable.</small></div><div><span>04</span><b>“You deserve this.”</b><small>A birthday, anniversary or just a very good surprise.</small></div></div></div></div></section>
     <section class="process-section"><div class="wrap"><div class="process-head"><div class="eyebrow">simple on purpose</div><h2>From “I should”<br>to “she got it.”</h2></div><div class="process-grid"><div><b>01</b><h3>Check the ZIP</h3><p>We confirm delivery to her Orlando-area address before you spend a minute choosing.</p></div><div><b>02</b><h3>Pick the feeling</h3><p>Choose the box that says what you are trying to say, from $59 with delivery included.</p></div><div><b>03</b><h3>Write the truth</h3><p>Add your own words. We print them on gift paper and place them inside the box.</p></div><div><b>04</b><h3>Get the update</h3><p>Choose a delivery window and receive updates by text when it is on the way.</p></div></div></div></section>
     <section class="value-section"><div class="wrap"><div class="value-head"><div><div class="eyebrow">why it feels like more</div><h2>Not a last-minute<br>panic purchase.</h2></div><p>It is a real gift, assembled with the details that make someone feel known. You get the emotional impact of a big gesture without the big price tag.</p></div><div class="value-grid"><div class="value-item"><b>01</b><h3>Recognizable favorites</h3><p>Full-size treats she already loves, not tiny samples hidden in filler.</p></div><div class="value-item"><b>02</b><h3>Ready to give</h3><p>Black gift box, tissue paper, ribbon and a handwritten-style note included.</p></div><div class="value-item"><b>03</b><h3>Delivery included</h3><p>No surprise shipping line at checkout in our Orlando service area.</p></div><div class="value-item"><b>04</b><h3>Built for the moment</h3><p>Choose a small reset, a real apology or the grand gesture.</p></div></div></div></section>
-    <section id="note-section" class="note-section"><div class="wrap note-grid"><div class="note-preview"><p>I know I hurt you.<br><br>I cannot undo it with a box, but I can start by showing you that I still care. Deeply, honestly, and always.</p><small>with care, someone who still chooses you</small></div><div class="note-copy"><div class="eyebrow">the part that stays</div><h2>Your words.<br>Your way.</h2><p>No ready-made message and no Pinterest quote. Write it the way you would say it face to face. We print it on gift paper and place it where she will see it first. You'll write yours in the last step of checkout.</p><button class="btn ghost" id="note-cta-btn">Start your gift →</button></div></div></section>
+    <section id="note-section" class="note-section"><div class="wrap note-grid"><div class="note-preview"><p>It's not a special date.<br><br>I just wanted to remind you that I love you, and that you mean the world to me.</p><small>with care, someone who still chooses you</small></div><div class="note-copy"><div class="eyebrow">the part that stays</div><h2>Your words.<br>Your way.</h2><p>No ready-made message and no Pinterest quote. Write it the way you would say it face to face. We print it on gift paper and place it where she will see it first. You'll write yours in the last step of checkout.</p><button class="btn ghost" id="note-cta-btn">Start your gift →</button></div></div></section>
     <section id="how-it-works" class="wrap" style="padding-bottom:45px"><div class="proofs"><div class="proof-box"><strong>3h</strong><span>average delivery window</span></div><div class="proof-box"><strong>100%</strong><span>notes in your own words</span></div><div class="proof-box"><strong>4.9/5</strong><span>rating from recipients</span></div><div class="proof-box"><strong>$59</strong><span>starting price, delivery included</span></div></div></section>
     <section class="reviews"><div class="wrap"><div class="eyebrow">it is more than a box</div><h2>“I did not know<br>what else to do. It worked.”</h2><div class="review-grid"><article class="review"><div class="stars">★★★★★</div><p>“She sent me a photo before even opening it. The conversation I had been avoiding happened that night.”</p><footer><b>Rafael, 29</b> · Orlando, FL</footer></article><article class="review"><div class="stars">★★★★★</div><p>“The note was the detail. It felt like I was there, not like a store sent something.”</p><footer><b>Marina, 34</b> · Davenport, FL</footer></article><article class="review"><div class="stars">★★★★★</div><p>“It arrived the same day and looked even better than I expected. It saved my anniversary.”</p><footer><b>Gui, 26</b> · Kissimmee, FL</footer></article></div></div></section>
     <section id="faq" class="wrap"><div class="faq-grid"><div><div class="eyebrow">no fine print</div><h2>Before<br>you send it.</h2><p style="color:var(--muted);font-size:14px;line-height:1.6;max-width:280px">Everything you need to know to decide and click without second guessing it.</p></div><div class="faq-list"><div class="faq open"><button>Do you deliver on the same day? <span>+</span></button><div class="answer"><div><p>Yes. Orders confirmed by 2 PM go into the same-day route in covered Orlando-area ZIP codes. Check availability before choosing a box.</p></div></div></div><div class="faq"><button>Can I send a message completely in my own words? <span>+</span></button><div class="answer"><div><p>Absolutely. Write up to 180 characters and we print it exactly as you wrote it on gift paper.</p></div></div></div><div class="faq"><button>What if I do not know the full address? <span>+</span></button><div class="answer"><div><p>No problem. You can complete the details after choosing the box. We only prepare the delivery after the address is confirmed.</p></div></div></div><div class="faq"><button>What happens if she is not home? <span>+</span></button><div class="answer"><div><p>Our courier makes two attempts, and we can also arrange delivery with someone she trusts. You receive updates by text.</p></div></div></div></div></div></section>
@@ -137,7 +140,9 @@ body.modal-open .order-bar,body.modal-open .toast{display:none!important}
         <div class="step-line"></div>
         <div class="step-dot" data-step="3"><span class="step-num">3</span><span class="step-label" id="step-label-3">Message</span></div>
         <div class="step-line"></div>
-        <div class="step-dot" data-step="4"><span class="step-num">4</span><span class="step-label" id="step-label-4">Pay</span></div>
+        <div class="step-dot" data-step="4"><span class="step-num">4</span><span class="step-label" id="step-label-4">Details</span></div>
+        <div class="step-line"></div>
+        <div class="step-dot" data-step="5"><span class="step-num">5</span><span class="step-label" id="step-label-5">Pay</span></div>
       </div>
 
       <div class="order-modal-body">
@@ -177,27 +182,34 @@ body.modal-open .order-bar,body.modal-open .toast{display:none!important}
         <div class="order-modal-step" data-step="3" hidden>
           <h3 id="step3-title">Write your message</h3>
           <p class="step-sub" id="step3-sub">No ready-made message — write it the way you would say it face to face. We print it exactly as you write it, on real gift paper.</p>
-          <div class="note-editor"><textarea id="note" maxlength="180" placeholder="Make it yours — write what you would like her to read here...">I know I hurt you.
+          <div class="note-editor"><textarea id="note" maxlength="180" placeholder="Make it yours — write what you would like her to read here...">It's not a special date.
 
-I cannot undo it with a box, but I can start by showing you that I still care. Deeply, honestly, and always.</textarea><div class="counter"><span id="count">118</span>/180</div></div>
+I just wanted to remind you that I love you, and that you mean the world to me.</textarea><div class="counter"><span id="count">105</span>/180</div></div>
         </div>
 
         <div class="order-modal-step" data-step="4" hidden>
           <div id="step4-details">
             <h3 id="details-title">Delivery + your details</h3>
             <p class="step-sub" id="details-sub">We deliver to the ZIP code you checked above.</p>
-            <div class="form-row"><div class="field"><label id="lbl-recipientName">Recipient full name</label><input id="recipientName" type="text" placeholder="Her name" autocomplete="shipping name"></div><div class="field"><label id="lbl-recipientPhone">Recipient phone (optional)</label><input id="recipientPhone" type="tel" placeholder="(407) 555-0134" autocomplete="shipping tel"></div></div>
-            <div class="field"><label id="lbl-street">Street address</label><input id="recipientAddress" type="text" placeholder="123 Main St, Apt 4B" autocomplete="shipping street-address"></div>
-            <div class="form-row"><div class="field"><label id="lbl-city">City</label><input id="recipientCity" type="text" value="Orlando" autocomplete="shipping address-level2"></div><div class="field"><label id="lbl-state">State</label><input id="recipientState" type="text" value="FL" maxlength="2" autocomplete="shipping address-level1"></div></div>
-            <div class="form-row"><div class="field"><label id="lbl-senderName">Your name</label><input id="senderName" type="text" placeholder="Your name" autocomplete="name"></div><div class="field"><label id="lbl-senderEmail">Your email (for the receipt)</label><input id="senderEmail" type="email" placeholder="you@email.com" autocomplete="email"></div></div>
-            <div class="field"><label id="lbl-senderPhone">Your phone (optional)</label><input id="senderPhone" type="tel" placeholder="(407) 555-0134" autocomplete="tel"></div>
+            <div class="recipient-block">
+              <div class="detail-section-label">🎁 <span id="lbl-recipient-section">Who's receiving this</span></div>
+              <div class="form-row"><div class="field"><label id="lbl-recipientName">Recipient full name</label><input id="recipientName" type="text" placeholder="Her name" autocomplete="shipping name"></div><div class="field"><label id="lbl-recipientPhone">Recipient phone (optional)</label><input id="recipientPhone" type="tel" placeholder="(407) 555-0134" autocomplete="shipping tel"></div></div>
+              <div class="field"><label id="lbl-street">Street address</label><input id="recipientAddress" type="text" placeholder="123 Main St, Apt 4B" autocomplete="shipping street-address"></div>
+              <div class="form-row"><div class="field"><label id="lbl-city">City</label><input id="recipientCity" type="text" value="Orlando" autocomplete="shipping address-level2"></div><div class="field"><label id="lbl-state">State</label><input id="recipientState" type="text" value="FL" maxlength="2" autocomplete="shipping address-level1"></div></div>
+            </div>
+            <div class="sender-block">
+              <div class="detail-section-label" id="lbl-sender-section">Your info</div>
+              <div class="form-row"><div class="field"><label id="lbl-senderName">Your name</label><input id="senderName" type="text" placeholder="Your name" autocomplete="name"></div><div class="field"><label id="lbl-senderEmail">Your email (for the receipt)</label><input id="senderEmail" type="email" placeholder="you@email.com" autocomplete="email"></div></div>
+              <div class="field"><label id="lbl-senderPhone">Your phone (optional)</label><input id="senderPhone" type="tel" placeholder="(407) 555-0134" autocomplete="tel"></div>
+            </div>
             <div id="details-error" class="result" role="alert" aria-live="assertive" style="background:#fbe4e2;border-left-color:var(--red)"></div>
-            <button class="btn red" id="continue-to-payment-btn" style="width:100%;justify-content:center">Continue to payment →</button>
           </div>
-          <div id="step4-payment" hidden>
+        </div>
+
+        <div class="order-modal-step" data-step="5" hidden>
+          <div id="step4-payment">
             <h3 id="payment-title">Pay securely</h3>
             <p class="step-sub" id="payment-sub">Enter your card details below. This never touches our servers.</p>
-            <button type="button" class="btn ghost" id="edit-details-btn" style="margin-bottom:14px;padding:8px 14px;font-size:11px">← <span id="edit-details-label">Edit your details</span></button>
             <div id="payment-element"></div>
             <div id="checkout-error" class="result" role="alert" aria-live="assertive" style="background:#fbe4e2;border-left-color:var(--red)"></div>
             <button class="btn red" id="pay-btn" style="width:100%;justify-content:center;margin-top:16px">Pay securely →</button>
@@ -250,12 +262,12 @@ Object.assign(dict.es,{
 '“I did not know':'“No sabía','what else to do. It worked.”':'qué hacer. Funcionó.”','She sent me a photo before even opening it. The conversation I had been avoiding happened that night.':'Me envió una foto antes de abrirlo. La conversación que estaba evitando ocurrió esa noche.','The note was the detail. It felt like I was there, not like a store sent something.':'La nota fue el detalle. Parecía que yo estaba allí, no que lo enviaba una tienda.','It arrived the same day and looked even better than I expected. It saved my anniversary.':'Llegó el mismo día y se veía mejor de lo que esperaba. Salvó nuestro aniversario.','no fine print':'sin letra pequeña','Before':'Antes de','you send it.':'enviarlo.','Everything you need to know to decide and click without second guessing it.':'Todo lo que necesitas saber para decidir sin dudar.','Do you deliver on the same day?':'¿Entregan el mismo día?','Can I send a message completely in my own words?':'¿Puedo enviar un mensaje con mis propias palabras?','What if I do not know the full address?':'¿Y si no conozco la dirección completa?','What happens if she is not home?':'¿Qué pasa si no está en casa?','Yes. Orders confirmed by 2 PM go into the same-day route in covered Orlando-area ZIP codes. Check availability before choosing a box.':'Sí. Los pedidos confirmados antes de las 2 PM entran en la ruta del mismo día en los códigos postales cubiertos del área de Orlando. Consulta antes de elegir.','Absolutely. Write up to 180 characters and we print it exactly as you wrote it on gift paper.':'Claro. Escribe hasta 180 caracteres y lo imprimimos exactamente como lo escribiste en papel de regalo.','No problem. You can complete the details after choosing the box. We only prepare the delivery after the address is confirmed.':'No hay problema. Puedes completar los datos después de elegir la caja. Preparamos la entrega cuando confirmamos la dirección.','Our courier makes two attempts, and we can also arrange delivery with someone she trusts. You receive updates by text.':'Nuestro repartidor hace dos intentos y podemos coordinar la entrega con alguien de confianza. Recibirás actualizaciones por mensaje.','Sometimes, the smallest decision is the beginning of the conversation.':'A veces, la decisión más pequeña es el comienzo de la conversación.','Choose a box from $59, write what you really want to say, and let us take care of the rest. Delivery is included.':'Elige una caja desde $59, escribe lo que realmente quieres decir y déjanos encargarnos del resto. La entrega está incluida.','made with intention · © 2026':'hecho con intención · © 2026','Instagram · WhatsApp · Terms':'Instagram · WhatsApp · Términos'});
 Object.assign(dict.pt,{'SAME-DAY DELIVERY IN ORLANDO':'ENTREGA NO MESMO DIA EM ORLANDO','order by 2 PM · delivery included in every price':'peça até 14h · entrega inclusa no preço','made for the Orlando area':'feito para a região de Orlando','Send a real gift.':'Envie um presente de verdade.','Not a delivery headache.':'Sem dor de cabeça com a entrega.','We hand-pack every box locally and deliver across the places you actually live, work and love around Central Florida.':'Montamos cada caixa localmente e entregamos nos lugares onde você vive, trabalha e ama na região de Central Florida.','AREA':'REGIÃO','Orlando + nearby':'Orlando + arredores','32801 · 32803 · 32819 · 33837 · 34741 and surrounding ZIP codes':'32801 · 32803 · 32819 · 33837 · 34741 e ZIP codes próximos','WINDOWS':'HORÁRIOS','Same-day when available':'Mesmo dia quando disponível','Choose a delivery window in your local time after checking the ZIP.':'Escolha uma janela no seu horário local depois de consultar o ZIP.','PRICE':'PREÇO','USD, delivery included':'USD, entrega inclusa','No surprise shipping fee added at checkout.':'Sem taxa surpresa adicionada no checkout.'});
 Object.assign(dict.es,{'SAME-DAY DELIVERY IN ORLANDO':'ENTREGA EL MISMO DÍA EN ORLANDO','order by 2 PM · delivery included in every price':'pide antes de las 2 PM · entrega incluida en el precio','made for the Orlando area':'hecho para el área de Orlando','Send a real gift.':'Envía un regalo de verdad.','Not a delivery headache.':'Sin dolores de cabeza con la entrega.','We hand-pack every box locally and deliver across the places you actually live, work and love around Central Florida.':'Armamos cada caja localmente y entregamos en los lugares donde vives, trabajas y quieres en Central Florida.','AREA':'ZONA','Orlando + nearby':'Orlando y alrededores','32801 · 32803 · 32819 · 33837 · 34741 and surrounding ZIP codes':'32801 · 32803 · 32819 · 33837 · 34741 y códigos cercanos','WINDOWS':'HORARIOS','Same-day when available':'El mismo día cuando está disponible','Choose a delivery window in your local time after checking the ZIP.':'Elige un horario en tu hora local después de consultar el código postal.','PRICE':'PRECIO','USD, delivery included':'USD, entrega incluida','No surprise shipping fee added at checkout.':'Sin cargos sorpresa al finalizar la compra.'});
-Object.assign(dict.pt,{'Teddy bear + Nutella':'Ursinho de pelúcia + Nutella','Ferrero Rocher, Milka + Snickers':'Ferrero Rocher, Milka + Snickers',"Teddy bear + Welch's grape juice":"Ursinho de pelúcia + suco de uva Welch's",'Nutella, Pringles, Lindt + Ferrero Rocher':'Nutella, Pringles, Lindt + Ferrero Rocher',"M and M's, Kinder Bueno + assorted candy":"M&M's, Kinder Bueno + doces variados",'Teddy bear + premium chocolate pretzels':'Ursinho de pelúcia + pretzels de chocolate premium',"Welch's, Nutella, Pringles, Lindt + premium nuts":"Welch's, Nutella, Pringles, Lindt + castanhas premium",'Full-size handwritten love note':'Carta de amor manuscrita em tamanho grande','We confirm delivery to her Orlando-area address before you spend a minute choosing.':'Confirmamos a entrega no endereço dela na região de Orlando antes de você gastar um minuto escolhendo.','Choose the box that says what you are trying to say, from $59 with delivery included.':'Escolha a caixa que diz o que você quer dizer, a partir de $59 com entrega inclusa.','Add your own words. We print them on gift paper and place them inside the box.':'Adicione suas próprias palavras. Nós imprimimos em papel de presente e colocamos dentro da caixa.','Choose a delivery window and receive updates by text when it is on the way.':'Escolha uma janela de entrega e receba atualizações por mensagem quando estiver a caminho.','“I messed up.”':'“Eu errei.”','A thoughtful apology without another awkward paragraph.':'Um pedido de desculpas de verdade, sem parágrafo constrangedor.','“I miss you.”':'“Estou com saudade.”','A little comfort for someone who is far away or having a hard week.':'Um carinho para quem está longe ou tendo uma semana difícil.','“I am thinking of you.”':'“Estou pensando em você.”','No occasion required. That is what makes it memorable.':'Não precisa de motivo. É isso que torna especial.','“You deserve this.”':'“Você merece isso.”','A birthday, anniversary or just a very good surprise.':'Um aniversário, uma data especial ou só uma boa surpresa.','the part that stays':'a parte que fica','it is more than a box':'é mais do que uma caixa','with care, someone who still chooses you':'com carinho, alguém que ainda escolhe você','notes in your own words':'bilhetes com suas próprias palavras','rating from recipients':'avaliação de quem recebeu','starting price, delivery included':'preço inicial, entrega inclusa','“I messed up. But I do not want this to become distance.”':'“Eu errei. Mas não quero que isso vire distância.”','Box selected. Now check delivery ✦':'Caixa selecionada. Agora confira a entrega ✦','I know I hurt you.':'Eu sei que te machuquei.','I cannot undo it with a box, but I can start by showing you that I still care. Deeply, honestly, and always.':'Não posso desfazer isso com uma caixa, mas posso começar mostrando que ainda me importo. Muito, de verdade e sempre.','“She sent me a photo before even opening it. The conversation I had been avoiding happened that night.”':'“Ela me mandou uma foto antes mesmo de abrir. A conversa que eu estava adiando aconteceu naquela noite.”','“The note was the detail. It felt like I was there, not like a store sent something.”':'“O bilhete foi o detalhe. Parecia que eu estava ali, não uma loja.”','“It arrived the same day and looked even better than I expected. It saved my anniversary.”':'“Chegou no mesmo dia e ficou ainda mais bonito do que eu esperava. Salvou meu aniversário.”'});
-Object.assign(dict.es,{'Teddy bear + Nutella':'Osito de peluche + Nutella','Ferrero Rocher, Milka + Snickers':'Ferrero Rocher, Milka + Snickers',"Teddy bear + Welch's grape juice":"Osito de peluche + jugo de uva Welch's",'Nutella, Pringles, Lindt + Ferrero Rocher':'Nutella, Pringles, Lindt + Ferrero Rocher',"M and M's, Kinder Bueno + assorted candy":"M&M's, Kinder Bueno + dulces variados",'Teddy bear + premium chocolate pretzels':'Osito de peluche + pretzels de chocolate premium',"Welch's, Nutella, Pringles, Lindt + premium nuts":"Welch's, Nutella, Pringles, Lindt + frutos secos premium",'Full-size handwritten love note':'Nota de amor manuscrita de tamaño completo','We confirm delivery to her Orlando-area address before you spend a minute choosing.':'Confirmamos la entrega en su dirección del área de Orlando antes de que dediques un minuto a elegir.','Choose the box that says what you are trying to say, from $59 with delivery included.':'Elige la caja que dice lo que quieres decir, desde $59 con entrega incluida.','Add your own words. We print them on gift paper and place them inside the box.':'Agrega tus propias palabras. Las imprimimos en papel de regalo y las colocamos dentro de la caja.','Choose a delivery window and receive updates by text when it is on the way.':'Elige una franja de entrega y recibe actualizaciones por mensaje cuando esté en camino.','“I messed up.”':'“Me equivoqué.”','A thoughtful apology without another awkward paragraph.':'Una disculpa sincera sin otro párrafo incómodo.','“I miss you.”':'“Te extraño.”','A little comfort for someone who is far away or having a hard week.':'Un poco de consuelo para alguien lejos o con una semana difícil.','“I am thinking of you.”':'“Estoy pensando en ti.”','No occasion required. That is what makes it memorable.':'No necesitas una ocasión. Eso es lo que lo hace memorable.','“You deserve this.”':'“Te lo mereces.”','A birthday, anniversary or just a very good surprise.':'Un cumpleaños, un aniversario o solo una gran sorpresa.','the part that stays':'la parte que se queda','it is more than a box':'es más que una caja','with care, someone who still chooses you':'con cariño, alguien que todavía te elige','notes in your own words':'notas con tus propias palabras','rating from recipients':'calificación de quienes lo reciben','starting price, delivery included':'precio inicial, entrega incluida','“I messed up. But I do not want this to become distance.”':'“Me equivoqué. Pero no quiero que esto se convierta en distancia.”','Box selected. Now check delivery ✦':'Caja seleccionada. Ahora revisa la entrega ✦','I know I hurt you.':'Sé que te hice daño.','I cannot undo it with a box, but I can start by showing you that I still care. Deeply, honestly, and always.':'No puedo arreglarlo con una caja, pero puedo empezar demostrando que todavía me importas. Mucho, de verdad y siempre.','“She sent me a photo before even opening it. The conversation I had been avoiding happened that night.”':'“Me envió una foto antes de abrirlo. La conversación que estaba evitando ocurrió esa noche.”','“The note was the detail. It felt like I was there, not like a store sent something.”':'“La nota fue el detalle. Parecía que yo estaba allí, no que lo enviaba una tienda.”','“It arrived the same day and looked even better than I expected. It saved my anniversary.”':'“Llegó el mismo día y se veía mejor de lo que esperaba. Salvó nuestro aniversario.”'});
+Object.assign(dict.pt,{'Teddy bear + Nutella':'Ursinho de pelúcia + Nutella','Ferrero Rocher, Milka + Snickers':'Ferrero Rocher, Milka + Snickers',"Teddy bear + Welch's grape juice":"Ursinho de pelúcia + suco de uva Welch's",'Nutella, Pringles, Lindt + Ferrero Rocher':'Nutella, Pringles, Lindt + Ferrero Rocher',"M and M's, Kinder Bueno + assorted candy":"M&M's, Kinder Bueno + doces variados",'Teddy bear + premium chocolate pretzels':'Ursinho de pelúcia + pretzels de chocolate premium',"Welch's, Nutella, Pringles, Lindt + premium nuts":"Welch's, Nutella, Pringles, Lindt + castanhas premium",'Full-size handwritten love note':'Carta de amor manuscrita em tamanho grande','We confirm delivery to her Orlando-area address before you spend a minute choosing.':'Confirmamos a entrega no endereço dela na região de Orlando antes de você gastar um minuto escolhendo.','Choose the box that says what you are trying to say, from $59 with delivery included.':'Escolha a caixa que diz o que você quer dizer, a partir de $59 com entrega inclusa.','Add your own words. We print them on gift paper and place them inside the box.':'Adicione suas próprias palavras. Nós imprimimos em papel de presente e colocamos dentro da caixa.','Choose a delivery window and receive updates by text when it is on the way.':'Escolha uma janela de entrega e receba atualizações por mensagem quando estiver a caminho.','“I messed up.”':'“Eu errei.”','A thoughtful apology without another awkward paragraph.':'Um pedido de desculpas de verdade, sem parágrafo constrangedor.','“I miss you.”':'“Estou com saudade.”','A little comfort for someone who is far away or having a hard week.':'Um carinho para quem está longe ou tendo uma semana difícil.','“I am thinking of you.”':'“Estou pensando em você.”','No occasion required. That is what makes it memorable.':'Não precisa de motivo. É isso que torna especial.','“You deserve this.”':'“Você merece isso.”','A birthday, anniversary or just a very good surprise.':'Um aniversário, uma data especial ou só uma boa surpresa.','the part that stays':'a parte que fica','it is more than a box':'é mais do que uma caixa','with care, someone who still chooses you':'com carinho, alguém que ainda escolhe você','notes in your own words':'bilhetes com suas próprias palavras','rating from recipients':'avaliação de quem recebeu','starting price, delivery included':'preço inicial, entrega inclusa','“I messed up. But I do not want this to become distance.”':'“Eu errei. Mas não quero que isso vire distância.”','Box selected. Now check delivery ✦':'Caixa selecionada. Agora confira a entrega ✦',"It's not a special date.":'Não é uma data especial.','I just wanted to remind you that I love you, and that you mean the world to me.':'Só queria lembrar que eu te amo, e que você significa o mundo pra mim.','“She sent me a photo before even opening it. The conversation I had been avoiding happened that night.”':'“Ela me mandou uma foto antes mesmo de abrir. A conversa que eu estava adiando aconteceu naquela noite.”','“The note was the detail. It felt like I was there, not like a store sent something.”':'“O bilhete foi o detalhe. Parecia que eu estava ali, não uma loja.”','“It arrived the same day and looked even better than I expected. It saved my anniversary.”':'“Chegou no mesmo dia e ficou ainda mais bonito do que eu esperava. Salvou meu aniversário.”'});
+Object.assign(dict.es,{'Teddy bear + Nutella':'Osito de peluche + Nutella','Ferrero Rocher, Milka + Snickers':'Ferrero Rocher, Milka + Snickers',"Teddy bear + Welch's grape juice":"Osito de peluche + jugo de uva Welch's",'Nutella, Pringles, Lindt + Ferrero Rocher':'Nutella, Pringles, Lindt + Ferrero Rocher',"M and M's, Kinder Bueno + assorted candy":"M&M's, Kinder Bueno + dulces variados",'Teddy bear + premium chocolate pretzels':'Osito de peluche + pretzels de chocolate premium',"Welch's, Nutella, Pringles, Lindt + premium nuts":"Welch's, Nutella, Pringles, Lindt + frutos secos premium",'Full-size handwritten love note':'Nota de amor manuscrita de tamaño completo','We confirm delivery to her Orlando-area address before you spend a minute choosing.':'Confirmamos la entrega en su dirección del área de Orlando antes de que dediques un minuto a elegir.','Choose the box that says what you are trying to say, from $59 with delivery included.':'Elige la caja que dice lo que quieres decir, desde $59 con entrega incluida.','Add your own words. We print them on gift paper and place them inside the box.':'Agrega tus propias palabras. Las imprimimos en papel de regalo y las colocamos dentro de la caja.','Choose a delivery window and receive updates by text when it is on the way.':'Elige una franja de entrega y recibe actualizaciones por mensaje cuando esté en camino.','“I messed up.”':'“Me equivoqué.”','A thoughtful apology without another awkward paragraph.':'Una disculpa sincera sin otro párrafo incómodo.','“I miss you.”':'“Te extraño.”','A little comfort for someone who is far away or having a hard week.':'Un poco de consuelo para alguien lejos o con una semana difícil.','“I am thinking of you.”':'“Estoy pensando en ti.”','No occasion required. That is what makes it memorable.':'No necesitas una ocasión. Eso es lo que lo hace memorable.','“You deserve this.”':'“Te lo mereces.”','A birthday, anniversary or just a very good surprise.':'Un cumpleaños, un aniversario o solo una gran sorpresa.','the part that stays':'la parte que se queda','it is more than a box':'es más que una caja','with care, someone who still chooses you':'con cariño, alguien que todavía te elige','notes in your own words':'notas con tus propias palabras','rating from recipients':'calificación de quienes lo reciben','starting price, delivery included':'precio inicial, entrega incluida','“I messed up. But I do not want this to become distance.”':'“Me equivoqué. Pero no quiero que esto se convierta en distancia.”','Box selected. Now check delivery ✦':'Caja seleccionada. Ahora revisa la entrega ✦',"It's not a special date.":'No es una fecha especial.','I just wanted to remind you that I love you, and that you mean the world to me.':'Solo quería recordarte que te amo, y que significas el mundo para mí.','“She sent me a photo before even opening it. The conversation I had been avoiding happened that night.”':'“Me envió una foto antes de abrirlo. La conversación que estaba evitando ocurrió esa noche.”','“The note was the detail. It felt like I was there, not like a store sent something.”':'“La nota fue el detalle. Parecía que yo estaba allí, no que lo enviaba una tienda.”','“It arrived the same day and looked even better than I expected. It saved my anniversary.”':'“Llegó el mismo día y se veía mejor de lo que esperaba. Salvó nuestro aniversario.”'});
 function detect(){const saved=localStorage.getItem('reconcilia-lang');if(saved&&packs[saved])return saved;const langs=navigator.languages||[navigator.language||'en'];const found=langs.map(x=>x.toLowerCase().slice(0,2)).find(x=>packs[x]);return found||'en'}
 let current=detect();
 function translate(lang){current=lang;localStorage.setItem('reconcilia-lang',lang);document.documentElement.lang=lang==='pt'?'pt-BR':lang;const map=dict[lang]||{};const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);nodes.forEach(n=>{const key=n.nodeValue.trim();if(map[key])n.nodeValue=n.nodeValue.replace(key,map[key])});document.querySelectorAll('[placeholder]').forEach(el=>{const key=el.getAttribute('placeholder');if(map[key])el.setAttribute('placeholder',map[key])});document.querySelectorAll('[title]').forEach(el=>{const key=el.getAttribute('title');if(map[key])el.setAttribute('title',map[key])});const selector=document.getElementById('language-switch');if(selector)selector.value=lang;updateDynamicLanguage()}
-function localizeCalendar(){const pack=packs[current];const locale=current==='pt'?'pt-BR':current==='es'?'es-US':'en-US';document.querySelectorAll('.day-choice').forEach((day,i)=>{const span=day.querySelector('span');if(!span)return;if(i===0){span.textContent=pack.today}else{const d=new Date(day.dataset.date+'T00:00:00');const parts=d.toLocaleDateString(locale,{weekday:'short',month:'short'}).replace('.','');span.textContent=parts}});const sel=document.getElementById('selection');if(sel&&!document.querySelector('.slot-choice.selected'))sel.textContent=pack.select}function updateDynamicLanguage(){const pack=packs[current];const note=document.getElementById('note');if(note&&(note.value.startsWith('I know')||note.value.startsWith('Eu sei')||note.value.startsWith('Sé'))){const values={en:'I know I hurt you.\n\nI cannot undo it with a box, but I can start by showing you that I still care. Deeply, honestly, and always.',pt:'Eu sei que te machuquei.\n\nNão posso desfazer isso com uma caixa, mas posso começar mostrando que ainda me importo. Muito, de verdade e sempre.',es:'Sé que te hice daño.\n\nNo puedo arreglarlo con una caja, pero puedo empezar demostrando que todavía me importas. Mucho, de verdad y siempre.'};note.value=values[current];note.dispatchEvent(new Event('input'))}}
+function localizeCalendar(){const pack=packs[current];const locale=current==='pt'?'pt-BR':current==='es'?'es-US':'en-US';document.querySelectorAll('.day-choice').forEach((day,i)=>{const span=day.querySelector('span');if(!span)return;if(i===0){span.textContent=pack.today}else{const d=new Date(day.dataset.date+'T00:00:00');const parts=d.toLocaleDateString(locale,{weekday:'short',month:'short'}).replace('.','');span.textContent=parts}});const sel=document.getElementById('selection');if(sel&&!document.querySelector('.slot-choice.selected'))sel.textContent=pack.select}function updateDynamicLanguage(){const pack=packs[current];const note=document.getElementById('note');if(note&&(note.value.startsWith("It's not a special date")||note.value.startsWith('Não é uma data especial')||note.value.startsWith('No es una fecha especial'))){const values={en:"It's not a special date.\n\nI just wanted to remind you that I love you, and that you mean the world to me.",pt:'Não é uma data especial.\n\nSó queria lembrar que eu te amo, e que você significa o mundo pra mim.',es:'No es una fecha especial.\n\nSolo quería recordarte que te amo, y que significas el mundo para mí.'};note.value=values[current];note.dispatchEvent(new Event('input'))}}
 const originalCheck=window.checkDelivery;window.checkDelivery=function(){const cep=document.getElementById('cep');const zip=cep.value.trim();const digits=zip.replace(/\D/g,'');const allowed=/^(327|328|338|347|33896|33897)/.test(digits);if(!/^\d{5}(?:-\d{4})?$/.test(zip)){cep.focus();showToast(packs[current].validZip);return}if(!allowed){cep.focus();showToast(packs[current].area);return}if(originalCheck)originalCheck();localizeCalendar();showToast(packs[current].success)};
 const oldToast=window.showToast;window.showToast=function(text){if(typeof text==='string'){if(text.includes('Enter a valid'))text=packs[current].validZip;if(text.includes('We currently'))text=packs[current].area;if(text.includes('We deliver'))text=packs[current].success;if(text.includes('selected.'))text=text.split(' selected.')[0]+packs[current].selected}return oldToast?oldToast(text):null};
 document.addEventListener('DOMContentLoaded',()=>{const selector=document.getElementById('language-switch');if(selector)selector.addEventListener('change',e=>{localStorage.setItem('reconcilia-lang',e.target.value);location.reload()});translate(current)});
@@ -273,7 +285,7 @@ translate(current);
 
   const T = {
     en: {
-      stepBox:'Box', stepDelivery:'Delivery', stepMessage:'Message', stepPay:'Pay',
+      stepBox:'Box', stepDelivery:'Delivery', stepMessage:'Message', stepDetails:'Details', stepPay:'Pay',
       step1Title:'Choose your gift box',
       step2Title:'When should it arrive?', step2Sub:'Enter her ZIP code. We deliver across Orlando and nearby areas.',
       step2ZipLabel:'Orlando area ZIP code', checkDeliveryBtn:'Check delivery →',
@@ -283,6 +295,7 @@ translate(current);
       selectDayTime:'Select a day and time to continue.', reservedFor:'Reserved for {day} · {time}.',
       step3Title:'Write your message', step3Sub:'No ready-made message — write it the way you would say it face to face. We print it exactly as you write it, on real gift paper.',
       detailsTitle:'Delivery + your details', detailsSub:'We deliver to the ZIP code you checked above.',
+      lblRecipientSection:"Who's receiving this", lblSenderSection:'Your info',
       lblRecipientName:'Recipient full name', phRecipientName:'Her name',
       lblRecipientPhone:'Recipient phone (optional)', phPhone:'(407) 555-0134',
       lblStreet:'Street address', phStreet:'123 Main St, Apt 4B',
@@ -301,9 +314,7 @@ translate(current);
       errStripeLoad:'Payment system failed to load. Please check your connection and try again.',
       errStripeConfig:'Payments are not configured yet. Please try again later.',
       paymentTitle:'Pay securely', paymentSub:'Enter your card details below. This never touches our servers.',
-      editDetailsLabel:'Edit your details',
       successTitle:'The gesture is on its way.', successSub:"Payment confirmed. We're hand-packing the box now — check your email for the receipt.",
-      continueToPaymentBtn:'Continue to payment →',
       startGift:'Start your gift →', continueGift:'Continue your gift →', finishPay:'Finish & pay {price} →',
       deliveryCtaTitle:'Ready when you are', deliveryCtaSub:"Checking delivery, picking a box and paying all happen in one quick flow — no digging through the page.",
       noteCtaBtn:'Start your gift →',
@@ -311,7 +322,7 @@ translate(current);
       packageDescs:{'The sweet one':"Teddy bear, Nutella, Ferrero Rocher, Milka + Snickers",'The apology':"Teddy bear, Welch's, Pringles, Lindt, M&M's + assorted candy",'The missing you':'Teddy bear, premium chocolates, nuts + full handwritten note'},
     },
     pt: {
-      stepBox:'Caixa', stepDelivery:'Entrega', stepMessage:'Mensagem', stepPay:'Pagar',
+      stepBox:'Caixa', stepDelivery:'Entrega', stepMessage:'Mensagem', stepDetails:'Dados', stepPay:'Pagar',
       step1Title:'Escolha sua caixa de presente',
       step2Title:'Quando ela deve chegar?', step2Sub:'Digite o ZIP code dela. Entregamos em Orlando e regiões próximas.',
       step2ZipLabel:'ZIP code da região de Orlando', checkDeliveryBtn:'Conferir entrega →',
@@ -321,6 +332,7 @@ translate(current);
       selectDayTime:'Selecione um dia e horário disponíveis para continuar.', reservedFor:'Reservado para {day} · {time}.',
       step3Title:'Escreva sua mensagem', step3Sub:'Sem mensagem pronta — escreva como você falaria olhando nos olhos. Imprimimos exatamente como você escreveu, em papel de presente de verdade.',
       detailsTitle:'Entrega + seus dados', detailsSub:'Entregamos no ZIP code que você conferiu acima.',
+      lblRecipientSection:'Quem vai receber', lblSenderSection:'Seus dados',
       lblRecipientName:'Nome completo de quem vai receber', phRecipientName:'Nome dela',
       lblRecipientPhone:'Telefone de quem vai receber (opcional)', phPhone:'(407) 555-0134',
       lblStreet:'Endereço', phStreet:'123 Main St, Apt 4B',
@@ -339,9 +351,7 @@ translate(current);
       errStripeLoad:'O sistema de pagamento não carregou. Verifique sua conexão e tente novamente.',
       errStripeConfig:'Os pagamentos ainda não estão configurados. Tente novamente mais tarde.',
       paymentTitle:'Pague com segurança', paymentSub:'Digite os dados do cartão abaixo. Isso nunca passa pelos nossos servidores.',
-      editDetailsLabel:'Editar seus dados',
       successTitle:'O gesto já está a caminho.', successSub:'Pagamento confirmado. Estamos montando a caixa agora — confira seu e-mail para o recibo.',
-      continueToPaymentBtn:'Continuar para o pagamento →',
       startGift:'Comece seu presente →', continueGift:'Continuar seu presente →', finishPay:'Finalizar e pagar {price} →',
       deliveryCtaTitle:'Pronto quando você estiver', deliveryCtaSub:'Conferir a entrega, escolher a caixa e pagar acontece tudo num fluxo rápido só — sem precisar procurar pela página.',
       noteCtaBtn:'Comece seu presente →',
@@ -349,7 +359,7 @@ translate(current);
       packageDescs:{'The sweet one':'Ursinho de pelúcia, Nutella, Ferrero Rocher, Milka + Snickers','The apology':"Ursinho de pelúcia, Welch's, Pringles, Lindt, M&M's + doces variados",'The missing you':'Ursinho de pelúcia, chocolates premium, castanhas + carta manuscrita completa'},
     },
     es: {
-      stepBox:'Caja', stepDelivery:'Entrega', stepMessage:'Mensaje', stepPay:'Pagar',
+      stepBox:'Caja', stepDelivery:'Entrega', stepMessage:'Mensaje', stepDetails:'Datos', stepPay:'Pagar',
       step1Title:'Elige tu caja de regalo',
       step2Title:'¿Cuándo debe llegar?', step2Sub:'Ingresa su código postal. Entregamos en Orlando y zonas cercanas.',
       step2ZipLabel:'Código postal del área de Orlando', checkDeliveryBtn:'Revisar entrega →',
@@ -359,6 +369,7 @@ translate(current);
       selectDayTime:'Selecciona un día y horario disponible para continuar.', reservedFor:'Reservado para {day} · {time}.',
       step3Title:'Escribe tu mensaje', step3Sub:'Sin mensaje preparado — escríbelo como lo dirías frente a frente. Lo imprimimos exactamente como lo escribas, en papel de regalo real.',
       detailsTitle:'Entrega + tus datos', detailsSub:'Entregamos en el código postal que revisaste arriba.',
+      lblRecipientSection:'Quién lo va a recibir', lblSenderSection:'Tus datos',
       lblRecipientName:'Nombre completo de quien recibe', phRecipientName:'Su nombre',
       lblRecipientPhone:'Teléfono de quien recibe (opcional)', phPhone:'(407) 555-0134',
       lblStreet:'Dirección', phStreet:'123 Main St, Apt 4B',
@@ -377,9 +388,7 @@ translate(current);
       errStripeLoad:'El sistema de pago no cargó. Revisa tu conexión e inténtalo de nuevo.',
       errStripeConfig:'Los pagos aún no están configurados. Inténtalo de nuevo más tarde.',
       paymentTitle:'Paga de forma segura', paymentSub:'Ingresa los datos de tu tarjeta abajo. Esto nunca pasa por nuestros servidores.',
-      editDetailsLabel:'Editar tus datos',
       successTitle:'El gesto ya está en camino.', successSub:'Pago confirmado. Estamos armando la caja ahora — revisa tu correo para el recibo.',
-      continueToPaymentBtn:'Continuar al pago →',
       startGift:'Comienza tu regalo →', continueGift:'Continuar tu regalo →', finishPay:'Finalizar y pagar {price} →',
       deliveryCtaTitle:'Listos cuando tú lo estés', deliveryCtaSub:'Revisar la entrega, elegir la caja y pagar sucede en un solo flujo rápido — sin tener que buscar por la página.',
       noteCtaBtn:'Comienza tu regalo →',
@@ -396,7 +405,7 @@ translate(current);
     const set = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
     const ph = (id, text) => { const el = document.getElementById(id); if(el) el.setAttribute('placeholder', text); };
 
-    set('step-label-1', s.stepBox); set('step-label-2', s.stepDelivery); set('step-label-3', s.stepMessage); set('step-label-4', s.stepPay);
+    set('step-label-1', s.stepBox); set('step-label-2', s.stepDelivery); set('step-label-3', s.stepMessage); set('step-label-4', s.stepDetails); set('step-label-5', s.stepPay);
     set('step1-title', s.step1Title);
     set('step2-title', s.step2Title); set('step2-sub', s.step2Sub); set('step2-zip-label', s.step2ZipLabel);
     set('modal-check-zip-btn', s.checkDeliveryBtn);
@@ -405,13 +414,12 @@ translate(current);
     set('step2-time-title', s.step2TimeTitle); set('step2-time-sub', s.step2TimeSub);
     set('step3-title', s.step3Title); set('step3-sub', s.step3Sub);
     set('details-title', s.detailsTitle); set('details-sub', s.detailsSub);
+    set('lbl-recipient-section', s.lblRecipientSection); set('lbl-sender-section', s.lblSenderSection);
     set('lbl-recipientName', s.lblRecipientName); set('lbl-recipientPhone', s.lblRecipientPhone);
     set('lbl-street', s.lblStreet); set('lbl-city', s.lblCity); set('lbl-state', s.lblState);
     set('lbl-senderName', s.lblSenderName); set('lbl-senderEmail', s.lblSenderEmail); set('lbl-senderPhone', s.lblSenderPhone);
     set('pay-btn', s.payBtn); set('trust-line', s.trust);
-    set('continue-to-payment-btn', s.continueToPaymentBtn);
     set('payment-title', s.paymentTitle); set('payment-sub', s.paymentSub);
-    set('edit-details-label', s.editDetailsLabel);
     set('success-title', s.successTitle); set('success-sub', s.successSub);
     set('modal-back-btn', s.back); set('modal-continue-btn', s.continueBtn);
     set('delivery-cta-title', s.deliveryCtaTitle); set('delivery-cta-sub', s.deliveryCtaSub);
@@ -464,8 +472,8 @@ translate(current);
       dot.classList.toggle('done', ds < n);
     });
     backBtn.hidden = n === 1;
-    continueBtn.hidden = n === 4;
-    if(n === 4) resetStep4View();
+    continueBtn.hidden = n === 5;
+    if(n === 5) resetPayStepView();
     refreshModalSummary();
     refreshBar();
     saveDraft();
@@ -473,12 +481,10 @@ translate(current);
     if(body) body.scrollTop = 0;
   }
 
-  function resetStep4View(){
-    const details = document.getElementById('step4-details');
+  function resetPayStepView(){
     const payment = document.getElementById('step4-payment');
     const success = document.getElementById('step4-success');
-    if(details) details.hidden = false;
-    if(payment) payment.hidden = true;
+    if(payment) payment.hidden = false;
     if(success) success.hidden = true;
   }
 
@@ -494,16 +500,10 @@ translate(current);
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
 
   backBtn.addEventListener('click', () => {
-    const paymentView = document.getElementById('step4-payment');
-    if(state.currentStep === 4 && paymentView && !paymentView.hidden){
-      paymentView.hidden = true;
-      document.getElementById('step4-details').hidden = false;
-      return;
-    }
     goToStep(Math.max(1, state.currentStep - 1));
   });
 
-  continueBtn.addEventListener('click', () => {
+  continueBtn.addEventListener('click', async () => {
     if(state.currentStep === 1){
       if(!state.packageName){ shakeModal(); return; }
       goToStep(2);
@@ -516,6 +516,8 @@ translate(current);
       const note = document.getElementById('note').value.trim();
       if(!note){ shakeModal(); return; }
       goToStep(4);
+    } else if(state.currentStep === 4){
+      await submitDetailsAndPreparePayment();
     }
   });
 
@@ -725,16 +727,13 @@ translate(current);
     return stripeClient;
   }
 
-  const detailsView = document.getElementById('step4-details');
   const paymentView = document.getElementById('step4-payment');
   const successView = document.getElementById('step4-success');
 
-  const continueToPaymentBtn = document.getElementById('continue-to-payment-btn');
-  if(continueToPaymentBtn) continueToPaymentBtn.addEventListener('click', async () => {
+  async function submitDetailsAndPreparePayment(){
     const s = t();
     clearError('details-error');
 
-    if(!state.packageName){ goToStep(1); return; }
     const day = document.querySelector('.day-choice.selected');
     const slot = document.querySelector('.slot-choice.selected');
     if(!day || !slot){ goToStep(2); return; }
@@ -762,9 +761,9 @@ translate(current);
       return;
     }
 
-    continueToPaymentBtn.disabled = true;
-    const originalLabel = continueToPaymentBtn.textContent;
-    continueToPaymentBtn.textContent = s.loadingPayment;
+    continueBtn.disabled = true;
+    const originalLabel = continueBtn.textContent;
+    continueBtn.textContent = s.loadingPayment;
 
     try {
       const orderRes = await fetch('/api/orders', {
@@ -814,22 +813,15 @@ translate(current);
       currentPaymentElement = stripeElements.create('payment');
       currentPaymentElement.mount('#payment-element');
 
-      detailsView.hidden = true;
-      paymentView.hidden = false;
       saveDraft();
+      goToStep(5);
     } catch(err){
       showError('details-error', err.message || 'Something went wrong. Please try again.');
     } finally {
-      continueToPaymentBtn.disabled = false;
-      continueToPaymentBtn.textContent = originalLabel;
+      continueBtn.disabled = false;
+      continueBtn.textContent = originalLabel;
     }
-  });
-
-  const editDetailsBtn = document.getElementById('edit-details-btn');
-  if(editDetailsBtn) editDetailsBtn.addEventListener('click', () => {
-    paymentView.hidden = true;
-    detailsView.hidden = false;
-  });
+  }
 
   const payBtn = document.getElementById('pay-btn');
   if(payBtn) payBtn.addEventListener('click', async () => {
