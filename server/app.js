@@ -114,28 +114,37 @@ app.post('/api/orders', async (req, res) => {
   }
 
   const pkg = getPackage(b.packageName.trim());
+  const fields = {
+    package_name: b.packageName.trim(),
+    price_cents: pkg.priceCents,
+    note: b.note.trim(),
+    recipient_name: b.recipientName.trim(),
+    recipient_phone: (b.recipientPhone || '').trim() || null,
+    recipient_address: b.recipientAddress.trim(),
+    recipient_city: (b.recipientCity || '').trim() || null,
+    recipient_state: (b.recipientState || '').trim() || null,
+    recipient_zip: zipDigits,
+    delivery_date: (b.deliveryDate || '').trim() || null,
+    delivery_window: (b.deliveryWindow || '').trim() || null,
+    sender_name: b.senderName.trim(),
+    sender_email: email,
+    sender_phone: (b.senderPhone || '').trim() || null,
+  };
 
   try {
-    const orderId = await db.createOrder({
-      package_name: b.packageName.trim(),
-      price_cents: pkg.priceCents,
-      note: b.note.trim(),
-      recipient_name: b.recipientName.trim(),
-      recipient_phone: (b.recipientPhone || '').trim() || null,
-      recipient_address: b.recipientAddress.trim(),
-      recipient_city: (b.recipientCity || '').trim() || null,
-      recipient_state: (b.recipientState || '').trim() || null,
-      recipient_zip: zipDigits,
-      delivery_date: (b.deliveryDate || '').trim() || null,
-      delivery_window: (b.deliveryWindow || '').trim() || null,
-      sender_name: b.senderName.trim(),
-      sender_email: email,
-      sender_phone: (b.senderPhone || '').trim() || null,
-    });
+    // If the customer already created a pending order earlier in this same
+    // checkout attempt (e.g. they went back to fix a typo), update it in
+    // place instead of leaving a duplicate row behind.
+    const existingId = Number(b.orderId);
+    if (existingId) {
+      const updated = await db.updatePendingOrder(existingId, fields);
+      if (updated) return res.json({ orderId: existingId });
+    }
 
+    const orderId = await db.createOrder(fields);
     res.json({ orderId });
   } catch (err) {
-    console.error('Failed to create order:', err.message);
+    console.error('Failed to save order:', err.message);
     res.status(500).json({ error: 'Could not save your order. Please try again.' });
   }
 });
@@ -159,7 +168,14 @@ app.post('/api/create-payment-intent', async (req, res) => {
       // between steps) avoids creating a new one - and a new client secret -
       // on every visit to the payment step.
       intent = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
-      if (intent.status === 'canceled') intent = null;
+      if (intent.status === 'canceled') {
+        intent = null;
+      } else if (intent.amount !== order.price_cents && intent.status === 'requires_payment_method') {
+        // The customer went back and changed the box (a different price) after
+        // this PaymentIntent was created - keep it in sync so they're never
+        // charged a stale amount.
+        intent = await stripe.paymentIntents.update(intent.id, { amount: order.price_cents });
+      }
     }
 
     if (!intent) {

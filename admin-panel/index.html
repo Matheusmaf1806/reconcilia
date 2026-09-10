@@ -64,7 +64,10 @@
     }
     function fmtDate(iso){
       if(!iso) return '—';
-      return new Date(iso.replace(' ', 'T') + 'Z').toLocaleString();
+      // Postgres (via `pg`) already returns full ISO 8601 timestamps (with a
+      // trailing Z), so they parse directly - no reformatting needed.
+      const d = new Date(iso);
+      return isNaN(d.getTime()) ? '—' : d.toLocaleString();
     }
     function esc(s){
       const d = document.createElement('div');
@@ -133,7 +136,6 @@
           <dt>Address</dt><dd>${esc(o.recipient_address)}${o.recipient_city ? ', ' + esc(o.recipient_city) : ''}${o.recipient_state ? ', ' + esc(o.recipient_state) : ''} ${esc(o.recipient_zip)}</dd>
           <dt>Delivery</dt><dd>${esc(o.delivery_date) || '—'} · ${esc(o.delivery_window) || '—'}</dd>
           <dt>Sender</dt><dd>${esc(o.sender_name)} · ${esc(o.sender_email)}${o.sender_phone ? ' · ' + esc(o.sender_phone) : ''}</dd>
-          <dt>Stripe session</dt><dd style="word-break:break-all">${esc(o.stripe_session_id) || '—'}</dd>
           <dt>Payment intent</dt><dd style="word-break:break-all">${esc(o.stripe_payment_intent_id) || '—'}</dd>
         </dl>
         <div class="note-block">“${esc(o.note)}”</div>

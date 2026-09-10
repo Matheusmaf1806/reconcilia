@@ -76,6 +76,32 @@ async function createOrder(order) {
   return result.rows[0].id;
 }
 
+// Used when a customer goes back and re-submits the details step (e.g. to
+// fix a typo before paying) - updates the same pending order in place
+// instead of leaving a duplicate row behind. Returns false if the order
+// doesn't exist or is no longer pending (already paid, etc).
+async function updatePendingOrder(id, order) {
+  await ensureSchema();
+  const result = await pool.query(
+    `UPDATE orders SET
+      package_name = $1, price_cents = $2, note = $3,
+      recipient_name = $4, recipient_phone = $5, recipient_address = $6, recipient_city = $7, recipient_state = $8, recipient_zip = $9,
+      delivery_date = $10, delivery_window = $11,
+      sender_name = $12, sender_email = $13, sender_phone = $14,
+      updated_at = now()
+    WHERE id = $15 AND status = 'pending'
+    RETURNING id`,
+    [
+      order.package_name, order.price_cents, order.note,
+      order.recipient_name, order.recipient_phone, order.recipient_address, order.recipient_city, order.recipient_state, order.recipient_zip,
+      order.delivery_date, order.delivery_window,
+      order.sender_name, order.sender_email, order.sender_phone,
+      id,
+    ]
+  );
+  return result.rows.length > 0;
+}
+
 async function attachPaymentIntent(orderId, paymentIntentId) {
   await ensureSchema();
   await pool.query(
@@ -123,6 +149,7 @@ async function listOrders() {
 module.exports = {
   pool,
   createOrder,
+  updatePendingOrder,
   attachPaymentIntent,
   markPaidByPaymentIntentId,
   markStatusByPaymentIntentId,
