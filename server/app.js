@@ -347,6 +347,21 @@ app.get('/api/admin/orders/:id', adminAuth, async (req, res) => {
   }
 });
 
+app.patch('/api/admin/orders/:id/fulfillment-status', adminAuth, async (req, res) => {
+  const fulfillmentStatus = req.body?.fulfillmentStatus;
+  if (!db.FULFILLMENT_STATUSES.includes(fulfillmentStatus)) {
+    return res.status(400).json({ error: 'Invalid fulfillment status.' });
+  }
+  try {
+    const updated = await db.updateFulfillmentStatus(Number(req.params.id), fulfillmentStatus);
+    if (!updated) return res.status(404).json({ error: 'Order not found.' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Failed to update fulfillment status:', err.message);
+    res.status(500).json({ error: 'Could not update fulfillment status.' });
+  }
+});
+
 app.use('/admin', adminAuth, express.static(path.join(__dirname, '..', 'admin-panel')));
 
 module.exports = app;

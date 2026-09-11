@@ -26,6 +26,11 @@
     .badge.paid{background:#e3f0df;color:var(--green)}
     .badge.pending{background:#fbeecb;color:#8a6a1c}
     .badge.expired,.badge.canceled{background:#f3dcdb;color:var(--red)}
+    .badge.received{background:#eee8de;color:var(--muted)}
+    .badge.preparing{background:#fbeecb;color:#8a6a1c}
+    .badge.in_transit{background:#e2e8f5;color:#3a4f8f}
+    .badge.delivered{background:#e3f0df;color:var(--green)}
+    .fstatus-select{font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:#fffaf2;color:var(--ink)}
     .empty{padding:40px;text-align:center;color:var(--muted)}
     .overlay{position:fixed;inset:0;background:rgba(23,18,15,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
     .overlay.show{display:flex}
@@ -86,6 +91,9 @@
       d.textContent = s == null ? '' : String(s);
       return d.innerHTML;
     }
+
+    const FULFILLMENT_LABELS = { received: 'Recebido', preparing: 'Em preparação', in_transit: 'Em trânsito', delivered: 'Entregue' };
+    function fstatusLabel(v){ return FULFILLMENT_LABELS[v] || v; }
 
     let orders = [];
 
@@ -165,11 +173,12 @@
           <td>${fmtMoney(o.amount_total || o.price_cents, o.currency || 'usd')}</td>
           <td>${esc(o.recipient_name)}<br><span style="color:var(--muted);font-size:11px">${esc(o.recipient_zip)}</span></td>
           <td><span class="badge ${esc(o.status)}">${esc(o.status)}</span></td>
+          <td><span class="badge ${esc(o.fulfillment_status)}">${esc(fstatusLabel(o.fulfillment_status))}</span></td>
         </tr>
       `).join('');
       content.innerHTML = `
         <table>
-          <thead><tr><th>ID</th><th>Date</th><th>Box</th><th>Amount</th><th>Recipient</th><th>Status</th></tr></thead>
+          <thead><tr><th>ID</th><th>Date</th><th>Box</th><th>Amount</th><th>Recipient</th><th>Payment</th><th>Delivery</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       `;
@@ -179,6 +188,9 @@
       const res = await fetch('/api/admin/orders/' + id);
       if(!res.ok) return;
       const o = await res.json();
+      const fulfillmentOptions = Object.keys(FULFILLMENT_LABELS).map(v =>
+        `<option value="${v}" ${v === o.fulfillment_status ? 'selected' : ''}>${esc(FULFILLMENT_LABELS[v])}</option>`
+      ).join('');
       document.getElementById('modal-body').innerHTML = `
         <h2>Order #${o.id} — ${esc(o.package_name)}</h2>
         <div class="sub">${fmtDate(o.created_at)} · <span class="badge ${esc(o.status)}">${esc(o.status)}</span></div>
@@ -189,10 +201,32 @@
           <dt>Delivery</dt><dd>${esc(o.delivery_date) || '—'} · ${esc(o.delivery_window) || '—'}</dd>
           <dt>Sender</dt><dd>${esc(o.sender_name)} · ${esc(o.sender_email)}${o.sender_phone ? ' · ' + esc(o.sender_phone) : ''}</dd>
           <dt>Payment intent</dt><dd style="word-break:break-all">${esc(o.stripe_payment_intent_id) || '—'}</dd>
+          <dt>Delivery status</dt><dd>
+            <select class="fstatus-select" id="fstatus-select" onchange="updateFulfillmentStatus(${o.id}, this.value)">${fulfillmentOptions}</select>
+            <span id="fstatus-saved" style="color:var(--green);font-size:12px;margin-left:8px"></span>
+          </dd>
         </dl>
         <div class="note-block">“${esc(o.note)}”</div>
       `;
       document.getElementById('overlay').classList.add('show');
+    }
+
+    async function updateFulfillmentStatus(id, fulfillmentStatus){
+      const savedLabel = document.getElementById('fstatus-saved');
+      try {
+        const res = await fetch('/api/admin/orders/' + id + '/fulfillment-status', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fulfillmentStatus }),
+        });
+        if(!res.ok) throw new Error();
+        const order = orders.find(o => o.id === id);
+        if(order) order.fulfillment_status = fulfillmentStatus;
+        renderTable();
+        if(savedLabel){ savedLabel.textContent = 'Saved ✓'; setTimeout(() => { if(savedLabel) savedLabel.textContent = ''; }, 2000); }
+      } catch(err){
+        if(savedLabel) savedLabel.textContent = 'Could not save — try again.';
+      }
     }
 
     function closeModal(){

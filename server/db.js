@@ -70,6 +70,7 @@ function ensureSchema() {
         fbc TEXT,
         client_ip TEXT,
         client_user_agent TEXT,
+        fulfillment_status TEXT NOT NULL DEFAULT 'received',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
@@ -80,6 +81,7 @@ function ensureSchema() {
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS fbc TEXT;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_ip TEXT;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_user_agent TEXT;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS fulfillment_status TEXT NOT NULL DEFAULT 'received';
 
       CREATE INDEX IF NOT EXISTS idx_orders_session ON orders(stripe_session_id);
       CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -204,6 +206,19 @@ async function updatePendingOrder(id, clientToken, order) {
   return result.rows.length > 0;
 }
 
+// The fulfillment lifecycle an order moves through after payment - separate
+// from `status` (which only tracks payment: pending/paid/failed/canceled).
+const FULFILLMENT_STATUSES = ['received', 'preparing', 'in_transit', 'delivered'];
+
+async function updateFulfillmentStatus(id, fulfillmentStatus) {
+  await ensureSchema();
+  const result = await pool.query(
+    `UPDATE orders SET fulfillment_status = $1, updated_at = now() WHERE id = $2 RETURNING id`,
+    [fulfillmentStatus, id]
+  );
+  return result.rows.length > 0;
+}
+
 async function attachPaymentIntent(orderId, paymentIntentId) {
   await ensureSchema();
   await pool.query(
@@ -260,4 +275,6 @@ module.exports = {
   listOrders,
   upsertSession,
   getFunnelStats,
+  FULFILLMENT_STATUSES,
+  updateFulfillmentStatus,
 };
