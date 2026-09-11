@@ -139,6 +139,7 @@ app.get('/api/health', async (req, res) => {
       database = 'error: ' + err.message;
     }
   }
+  const resend = await emailService.getStatus();
   res.json({
     database,
     stripeSecretKey: STRIPE_SECRET_KEY ? 'set' : 'missing',
@@ -146,6 +147,7 @@ app.get('/api/health', async (req, res) => {
     stripeWebhookSecret: STRIPE_WEBHOOK_SECRET ? 'set' : 'missing',
     adminUser: process.env.ADMIN_USER ? 'set' : 'using default (admin)',
     adminPassword: process.env.ADMIN_PASSWORD ? 'set' : 'using default (insecure!)',
+    resend,
   });
 });
 

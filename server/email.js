@@ -6,6 +6,36 @@ if (!RESEND_API_KEY) {
   console.warn('[warn] RESEND_API_KEY is not set. Order confirmation and delivery-status emails will be skipped.');
 }
 
+// Used by /api/health so deployment issues (bad key, unverified domain) show
+// up without having to trigger a real order and wait for an email to land.
+async function getStatus() {
+  if (!RESEND_API_KEY) return { configured: false };
+
+  const fromMatch = RESEND_FROM_EMAIL.match(/@([^\s>]+)/);
+  const fromDomain = fromMatch ? fromMatch[1].toLowerCase() : null;
+
+  try {
+    const res = await fetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { configured: true, apiKey: 'error: ' + (data.message || `HTTP ${res.status}`) };
+    }
+    const domains = Array.isArray(data.data) ? data.data : [];
+    const match = fromDomain ? domains.find(d => d.name?.toLowerCase() === fromDomain) : null;
+    return {
+      configured: true,
+      apiKey: 'valid',
+      fromEmail: RESEND_FROM_EMAIL,
+      fromDomain: fromDomain || 'unknown',
+      domainStatus: fromDomain === 'resend.dev' ? 'shared_test_domain' : (match ? match.status : 'not_found_in_account'),
+    };
+  } catch (err) {
+    return { configured: true, apiKey: 'error: ' + err.message };
+  }
+}
+
 function escapeHtml(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -88,4 +118,4 @@ async function sendStatusUpdate(order, fulfillmentStatus) {
   await sendEmail({ to: order.sender_email, subject: `reconcilia — ${copy.subject}`, html });
 }
 
-module.exports = { sendOrderConfirmation, sendStatusUpdate };
+module.exports = { sendOrderConfirmation, sendStatusUpdate, getStatus };
