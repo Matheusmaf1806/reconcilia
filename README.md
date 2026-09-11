@@ -249,10 +249,10 @@ string the browser holds onto for its own order) — no accounts, no passwords.
   order's delivery status in `/admin` (`preparing`, `in_transit`, or
   `delivered` — the initial `received` state doesn't get its own email,
   since the confirmation email already covers that moment).
-- **Abandoned-cart email** — `GET /api/cron/abandoned-cart`, run daily by
-  Vercel Cron (`vercel.json`'s `crons` entry - Vercel's free Hobby plan only
-  allows daily schedules; on Pro you can tighten it, e.g. `"0 * * * *"` for
-  hourly). Finds orders left `pending`/`failed` for 45+ minutes that haven't
+- **Abandoned-cart email** — `GET /api/cron/abandoned-cart`, run hourly by
+  Vercel Cron (`vercel.json`'s `crons` entry - hourly requires a paid Vercel
+  plan; Hobby is limited to a daily schedule, e.g. `"0 0 * * *"`). Finds
+  orders left `pending`/`failed` for 45+ minutes that haven't
   already gotten a reminder (`abandoned_email_sent_at`, set once sent so it
   never fires twice), and emails a link back to `/?box=<packageName>` -
   which reopens the checkout modal with that box already picked rather than
