@@ -100,6 +100,29 @@ app.get('/api/config', (req, res) => {
   res.json({ publishableKey: STRIPE_PUBLISHABLE_KEY || null, pixelId: META_PIXEL_ID || null });
 });
 
+// Anonymous funnel tracking - no name, email, address or note ever passes
+// through here, just how far a visitor got and how long they stayed. Public
+// (every visitor hits it, not just logged-in admins) and best-effort: a bad
+// payload just gets ignored rather than surfaced as an error to the visitor.
+app.post('/api/track', async (req, res) => {
+  const b = req.body || {};
+  const sessionId = typeof b.sessionId === 'string' ? b.sessionId.slice(0, 100) : null;
+  const furthestStep = Number(b.furthestStep);
+  if (!sessionId || !Number.isInteger(furthestStep) || furthestStep < 0 || furthestStep > 6) {
+    return res.status(204).end();
+  }
+  const secondsOnPage = Math.max(0, Math.min(Number(b.secondsOnPage) || 0, 24 * 60 * 60));
+  const packageName = isNonEmptyString(b.packageName, 100) ? b.packageName.trim() : null;
+  const orderId = Number.isInteger(Number(b.orderId)) && Number(b.orderId) > 0 ? Number(b.orderId) : null;
+
+  try {
+    await db.upsertSession({ id: sessionId, furthestStep, packageName, secondsOnPage, orderId });
+  } catch (err) {
+    console.error('Failed to record funnel tracking ping:', err.message);
+  }
+  res.status(204).end();
+});
+
 // Diagnostics for deployment troubleshooting. Reports whether required
 // config is present and whether the database is actually reachable -
 // without ever exposing the secret values themselves.
@@ -301,6 +324,15 @@ app.get('/api/admin/orders', adminAuth, async (req, res) => {
   } catch (err) {
     console.error('Failed to list orders:', err.message);
     res.status(500).json({ error: 'Could not load orders.' });
+  }
+});
+
+app.get('/api/admin/funnel', adminAuth, async (req, res) => {
+  try {
+    res.json(await db.getFunnelStats());
+  } catch (err) {
+    console.error('Failed to load funnel stats:', err.message);
+    res.status(500).json({ error: 'Could not load funnel stats.' });
   }
 });
 

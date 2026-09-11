@@ -320,6 +320,51 @@ translate(current);
     };
   }
 
+  // ---------- Funnel tracking: how far visitors get, and for how long ----------
+  // Anonymous - a random per-tab id, never a name/email/address. Powers the
+  // "Funnel" section in the admin panel, showing drop-off at each checkout
+  // step even for the majority of visitors who never place an order.
+  function getSessionId(){
+    try {
+      let id = sessionStorage.getItem('reconcilia-session-id');
+      if(!id){
+        id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('sid-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+        sessionStorage.setItem('reconcilia-session-id', id);
+      }
+      return id;
+    } catch(e){ return null; }
+  }
+  const trackSessionId = getSessionId();
+  const pageLoadTime = Date.now();
+  let furthestStep = 0; // 0 landed, 1-5 modal steps (Box/Delivery/Message/Details/Pay), 6 purchased
+
+  function sendTrackPing(useBeacon){
+    if(!trackSessionId) return;
+    const payload = JSON.stringify({
+      sessionId: trackSessionId,
+      furthestStep,
+      packageName: state.packageName || undefined,
+      secondsOnPage: Math.round((Date.now() - pageLoadTime) / 1000),
+      orderId: (typeof currentOrderId !== 'undefined' && currentOrderId) || undefined,
+    });
+    if(useBeacon && navigator.sendBeacon){
+      navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
+    } else {
+      fetch('/api/track', { method: 'POST', headers: {'Content-Type':'application/json'}, body: payload, keepalive: true }).catch(()=>{});
+    }
+  }
+
+  function markFunnelStep(step){
+    if(step > furthestStep){
+      furthestStep = step;
+      sendTrackPing(false);
+    }
+  }
+
+  setInterval(() => sendTrackPing(false), 20000);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') sendTrackPing(true); });
+  window.addEventListener('pagehide', () => sendTrackPing(true));
+
   function currentLang(){
     try { return localStorage.getItem('reconcilia-lang') || 'en'; } catch(e){ return 'en'; }
   }
@@ -511,6 +556,7 @@ translate(current);
 
   function goToStep(n){
     state.currentStep = n;
+    markFunnelStep(n);
     modalStepPanels.forEach(panel => { panel.hidden = Number(panel.dataset.step) !== n; });
     modalSteps.forEach(dot => {
       const ds = Number(dot.dataset.step);
@@ -921,6 +967,7 @@ translate(current);
       // Shares its event_id with the server-side Purchase CAPI event fired
       // from the webhook, so Meta counts this as one conversion, not two.
       fbTrack('Purchase', packageEventData(state.packageName, state.priceCents), `purchase_${currentOrderId}`);
+      markFunnelStep(6);
       try { sessionStorage.removeItem(STORE_KEY); } catch(e){}
       paymentView.hidden = true;
       successView.hidden = false;

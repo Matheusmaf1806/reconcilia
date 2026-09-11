@@ -92,6 +92,20 @@
             }, { eventID: 'purchase_' + order.orderId });
             try { sessionStorage.setItem(firedKey, '1'); } catch(e){}
           }
+
+          // Same funnel-tracking session id as the checkout page (persists
+          // across this same-tab redirect) so this counts as that same
+          // visitor reaching "Purchased", not a disconnected new session.
+          try {
+            const sessionId = sessionStorage.getItem('reconcilia-session-id');
+            if(sessionId){
+              fetch('/api/track', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ sessionId, furthestStep: 6, orderId: order.orderId }),
+              }).catch(()=>{});
+            }
+          } catch(e){}
           return;
         }
 

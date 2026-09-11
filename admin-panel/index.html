@@ -38,6 +38,13 @@
     .note-block{background:#fff3cf;border-left:3px solid var(--red);padding:12px 14px;margin-top:16px;font-style:italic;white-space:pre-wrap}
     .modal-close{float:right;background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
     .refresh{background:var(--ink);color:var(--paper);border:0;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:14px}
+    section.panel{background:#fffaf2;border:1px solid var(--line);border-radius:6px;padding:18px 20px;margin-bottom:22px}
+    section.panel h2{margin:0 0 14px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    .funnel-row{display:grid;grid-template-columns:110px 1fr 90px;align-items:center;gap:12px;padding:6px 0;font-size:13px}
+    .funnel-row .track{background:var(--paper-2);border-radius:3px;height:20px;overflow:hidden}
+    .funnel-row .fill{background:var(--red);height:100%;border-radius:3px;transition:width .3s ease}
+    .funnel-row .count{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}
+    .funnel-row .drop{color:var(--red);font-size:11px}
   </style>
 </head>
 <body>
@@ -46,6 +53,11 @@
     <button onclick="location.reload()">Refresh</button>
   </header>
   <main>
+    <section class="panel">
+      <h2>Funnel — where visitors drop off</h2>
+      <div id="funnel-stats" class="stats" style="margin-bottom:16px"></div>
+      <div id="funnel-chart">Loading…</div>
+    </section>
     <div id="stats" class="stats"></div>
     <div id="content">Loading orders…</div>
   </main>
@@ -83,6 +95,46 @@
       orders = await res.json();
       renderStats();
       renderTable();
+      loadFunnel();
+    }
+
+    function fmtDuration(seconds){
+      if(!seconds) return '0s';
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return m ? `${m}m ${s}s` : `${s}s`;
+    }
+
+    async function loadFunnel(){
+      const chart = document.getElementById('funnel-chart');
+      try {
+        const res = await fetch('/api/admin/funnel');
+        if(!res.ok){ chart.innerHTML = '<div class="empty">Could not load funnel data.</div>'; return; }
+        const data = await res.json();
+        document.getElementById('funnel-stats').innerHTML = `
+          <div class="stat"><b>${esc(data.totalSessions)}</b><span>Visitor sessions tracked</span></div>
+          <div class="stat"><b>${esc(fmtDuration(data.avgSecondsOnPage))}</b><span>Avg. time on page</span></div>
+        `;
+        if(!data.totalSessions){
+          chart.innerHTML = '<div class="empty">No visitor activity tracked yet.</div>';
+          return;
+        }
+        const maxCount = data.steps[0].count || 1;
+        chart.innerHTML = data.steps.map((s, i) => {
+          const pct = Math.round((s.count / maxCount) * 100);
+          const prev = i > 0 ? data.steps[i - 1].count : null;
+          const dropOff = prev ? Math.round(((prev - s.count) / prev) * 100) : null;
+          return `
+            <div class="funnel-row">
+              <span>${esc(s.label)}</span>
+              <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+              <span class="count">${esc(s.count)}${dropOff !== null && dropOff > 0 ? `<br><span class="drop">-${dropOff}%</span>` : ''}</span>
+            </div>
+          `;
+        }).join('');
+      } catch(err){
+        chart.innerHTML = '<div class="empty">Could not load funnel data.</div>';
+      }
     }
 
     function renderStats(){

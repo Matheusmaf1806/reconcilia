@@ -8,10 +8,10 @@ and get paid — deployable on Vercel.
 ## What's included
 
 - **Landing page** (`public/index.html`) — the original design, with a
-  4-step checkout modal bolted on: **Box → Delivery → Message → Pay**. Every
-  "buy" entry point on the page opens it; no scrolling around the page is
-  needed to complete an order. A sticky bottom button always resumes exactly
-  where the customer left off. Fully localized (EN/ES/PT).
+  5-step checkout modal bolted on: **Box → Delivery → Message → Details →
+  Pay**. Every "buy" entry point on the page opens it; no scrolling around
+  the page is needed to complete an order. A sticky bottom button always
+  resumes exactly where the customer left off. Fully localized (EN/ES/PT).
 - **Checkout** — the card form (Stripe Elements' Payment Element) is embedded
   directly in the last step, styled to match the site. There is no redirect
   to a separate Stripe-hosted page; the only time the browser leaves is the
@@ -26,7 +26,10 @@ and get paid — deployable on Vercel.
 - **Admin panel** (`/admin`, protected by HTTP basic auth) — a list of every
   order (paid, pending, expired) with revenue stats, and a detail view per
   order showing the package, the recipient's address, the delivery window,
-  the sender's contact info, and the gift note ("carta").
+  the sender's contact info, and the gift note ("carta"). A funnel section
+  at the top shows drop-off at each checkout step and average time on page,
+  built from anonymous session pings — no name/email/address involved, and
+  it works even for the majority of visitors who never place an order.
 - **Meta Pixel + Conversions API** — tracks ViewContent, InitiateCheckout,
   AddPaymentInfo and Purchase, each fired from the browser (Pixel) and, for
   the two events ad platforms weight most, mirrored server-side (Conversions

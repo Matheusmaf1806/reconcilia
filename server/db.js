@@ -83,9 +83,72 @@ function ensureSchema() {
 
       CREATE INDEX IF NOT EXISTS idx_orders_session ON orders(stripe_session_id);
       CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+
+      -- Anonymous funnel tracking: one row per browser tab session, holding
+      -- only the furthest checkout step reached and time on page - no name,
+      -- email or address. Lets the admin panel show drop-off without waiting
+      -- for an order (most visitors never create one) to exist.
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        furthest_step INTEGER NOT NULL DEFAULT 0,
+        package_name TEXT,
+        seconds_on_page INTEGER NOT NULL DEFAULT 0,
+        order_id INTEGER,
+        first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at);
     `);
   }
   return schemaReady;
+}
+
+// Funnel steps, in order - shared with the client so both sides agree on
+// what each number means:
+// 0 landed (page loaded, modal never opened)   4 details filled in
+// 1 box chosen                                 5 reached payment
+// 2 delivery checked                           6 purchased
+// 3 message written
+const FUNNEL_STEPS = ['Landed', 'Box', 'Delivery', 'Message', 'Details', 'Pay', 'Purchased'];
+
+// Upserted repeatedly as a visitor moves through the funnel (roughly every
+// step change, plus a heartbeat while the tab stays open). GREATEST/COALESCE
+// make it safe for pings to arrive out of order or restate stale values -
+// progress and time on page only ever move forward.
+async function upsertSession({ id, furthestStep, packageName, secondsOnPage, orderId }) {
+  await ensureSchema();
+  await pool.query(
+    `INSERT INTO sessions (id, furthest_step, package_name, seconds_on_page, order_id, first_seen_at, last_seen_at)
+     VALUES ($1, $2, $3, $4, $5, now(), now())
+     ON CONFLICT (id) DO UPDATE SET
+       furthest_step = GREATEST(sessions.furthest_step, EXCLUDED.furthest_step),
+       package_name = COALESCE(EXCLUDED.package_name, sessions.package_name),
+       seconds_on_page = GREATEST(sessions.seconds_on_page, EXCLUDED.seconds_on_page),
+       order_id = COALESCE(EXCLUDED.order_id, sessions.order_id),
+       last_seen_at = now()`,
+    [id, furthestStep, packageName || null, secondsOnPage, orderId || null]
+  );
+}
+
+async function getFunnelStats() {
+  await ensureSchema();
+  const [countsResult, avgResult] = await Promise.all([
+    pool.query(`SELECT furthest_step, COUNT(*)::int AS count FROM sessions GROUP BY furthest_step`),
+    pool.query(`SELECT ROUND(AVG(seconds_on_page))::int AS avg_seconds, COUNT(*)::int AS total FROM sessions`),
+  ]);
+  const countByStep = {};
+  countsResult.rows.forEach(r => { countByStep[r.furthest_step] = r.count; });
+  // A visitor who reached step N also passed through every step before it,
+  // so each step's total is its own count plus everyone who went further.
+  const steps = FUNNEL_STEPS.map((label, i) => {
+    const reachedOrPast = FUNNEL_STEPS.reduce((sum, _, j) => (j >= i ? sum + (countByStep[j] || 0) : sum), 0);
+    return { step: i, label, count: reachedOrPast };
+  });
+  return {
+    steps,
+    totalSessions: avgResult.rows[0].total || 0,
+    avgSecondsOnPage: avgResult.rows[0].avg_seconds || 0,
+  };
 }
 
 async function createOrder(order) {
@@ -195,4 +258,6 @@ module.exports = {
   getOrderById,
   getOrderByPaymentIntentId,
   listOrders,
+  upsertSession,
+  getFunnelStats,
 };
