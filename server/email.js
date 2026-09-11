@@ -43,7 +43,7 @@ function escapeHtml(value) {
 }
 
 function trackingUrl(order) {
-  return `${PUBLIC_BASE_URL}/track.html?id=${order.id}&token=${order.client_token}`;
+  return `${PUBLIC_BASE_URL}/track?id=${order.id}&token=${order.client_token}`;
 }
 
 function layout({ title, bodyHtml, order }) {

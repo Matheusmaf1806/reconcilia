@@ -16,7 +16,7 @@ and get paid — deployable on Vercel.
   directly in the last step, styled to match the site. There is no redirect
   to a separate Stripe-hosted page; the only time the browser leaves is the
   rare case where a card requires 3D Secure authentication, and it returns
-  right back to `success.html`. We never see or store card numbers — Stripe's
+  right back to `/success`. We never see or store card numbers — Stripe's
   iframe handles that entirely.
 - **Backend** (`server/`) — Node.js + Express + Postgres. Validates orders,
   creates a Stripe PaymentIntent per order, and listens for the
@@ -182,7 +182,7 @@ leaving it unset is a complete no-op.
 | `ViewContent` | A box is selected (landing page or step 1) | No |
 | `InitiateCheckout` | The checkout modal opens | No |
 | `AddPaymentInfo` | The order is saved and the card form loads (step 5) | Yes — from `POST /api/create-payment-intent` |
-| `Purchase` | Payment confirms with no redirect, or on `success.html` after a 3D Secure redirect | Yes — from the `payment_intent.succeeded` webhook (the authoritative copy) |
+| `Purchase` | Payment confirms with no redirect, or on `/success` after a 3D Secure redirect | Yes — from the `payment_intent.succeeded` webhook (the authoritative copy) |
 
 `AddPaymentInfo` and `Purchase` use a deterministic `event_id`
 (`addpayinfo_<orderId>` / `purchase_<orderId>`) on both the Pixel call and the
@@ -219,7 +219,7 @@ on their order, and an email confirming it actually went through. Both are
 built on the same `client_token` already used to secure checkout (the random
 string the browser holds onto for its own order) — no accounts, no passwords.
 
-- **`public/track.html?id=<orderId>&token=<clientToken>`** — fetches
+- **`/track?id=<orderId>&token=<clientToken>`** (`public/track.html` on disk) — fetches
   `GET /api/orders/:id/track` (which requires the matching token, so a
   guessed order id alone can't be used to look someone else's up) and shows
   a 4-stage progress view: Received → Preparing → On its way → Delivered,

@@ -96,7 +96,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 });
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'), { extensions: ['html'] }));
 
 app.get('/api/config', (req, res) => {
   res.json({ publishableKey: STRIPE_PUBLISHABLE_KEY || null, pixelId: META_PIXEL_ID || null });

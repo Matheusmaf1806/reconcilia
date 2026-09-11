@@ -948,10 +948,10 @@ translate(current);
       const result = await stripeClient.confirmPayment({
         elements: stripeElements,
         confirmParams: {
-          // Stripe appends ?payment_intent=... itself on this redirect; success.html
+          // Stripe appends ?payment_intent=... itself on this redirect; success
           // uses that to look up the order (the receipt email is already set
           // server-side when the PaymentIntent was created).
-          return_url: `${window.location.origin}/success.html`,
+          return_url: `${window.location.origin}/success`,
         },
         redirect: 'if_required',
       });
