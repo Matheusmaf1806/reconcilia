@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Track your order — reconcilia</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#17120f;--paper:#f7f2e9;--muted:#7e7064;--red:#b93632;--yellow:#e6b84f;--green:#3f7a3a;--line:rgba(23,18,15,.14);--serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',Arial,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{max-width:560px;width:100%;background:#fffaf2;border:1px solid var(--line);border-radius:6px;padding:38px 34px}
+    h1{font:500 clamp(24px,5vw,32px)/1.15 var(--serif);letter-spacing:-.02em;margin:0 0 6px}
+    .sub{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 26px}
+    .steps{display:flex;justify-content:space-between;margin:0 0 30px;position:relative}
+    .steps:before{content:'';position:absolute;top:13px;left:20px;right:20px;height:2px;background:var(--line);z-index:0}
+    .step{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+    .step .dot{width:26px;height:26px;border-radius:50%;background:#fffaf2;border:2px solid var(--line);display:grid;place-items:center;font:600 11px var(--sans);color:var(--muted)}
+    .step.done .dot{background:var(--red);border-color:var(--red);color:#fff}
+    .step .label{font-size:11px;color:var(--muted);text-align:center;max-width:80px}
+    .step.done .label{color:var(--ink);font-weight:600}
+    .details{background:var(--paper);border-radius:4px;padding:18px 20px;margin:22px 0;font-size:13px;line-height:1.8}
+    .details b{color:var(--ink)}
+    .note-block{background:#fff3cf;border-left:3px solid var(--red);padding:12px 14px;margin-top:16px;font-style:italic;white-space:pre-wrap;font-size:13px}
+    a.btn{display:inline-block;margin-top:22px;background:var(--ink);color:var(--paper);padding:13px 20px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px}
+    .pending-note{color:#8a6a1c;background:#fbeecb;padding:12px 14px;border-radius:4px;font-size:13px;margin-bottom:20px}
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h1 id="title">Loading your order…</h1>
+    <p class="sub" id="sub"></p>
+    <div id="content"></div>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('id');
+    const token = params.get('token');
+    const titleEl = document.getElementById('title');
+    const subEl = document.getElementById('sub');
+    const contentEl = document.getElementById('content');
+
+    const STEP_LABELS = ['Received', 'Preparing', 'On its way', 'Delivered'];
+    const STEP_KEYS = ['received', 'preparing', 'in_transit', 'delivered'];
+
+    function esc(s){
+      const d = document.createElement('div');
+      d.textContent = s == null ? '' : String(s);
+      return d.innerHTML;
+    }
+
+    function renderSteps(fulfillmentStatus){
+      const currentIndex = Math.max(0, STEP_KEYS.indexOf(fulfillmentStatus));
+      return `<div class="steps">${STEP_KEYS.map((key, i) => `
+        <div class="step ${i <= currentIndex ? 'done' : ''}">
+          <div class="dot">${i <= currentIndex ? '✓' : i + 1}</div>
+          <span class="label">${STEP_LABELS[i]}</span>
+        </div>
+      `).join('')}</div>`;
+    }
+
+    async function load(){
+      if(!orderId || !token){
+        titleEl.textContent = 'We could not find this order.';
+        subEl.textContent = 'Check the link from your confirmation email and try again.';
+        return;
+      }
+      try{
+        const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/track?token=${encodeURIComponent(token)}`);
+        if(!res.ok){
+          titleEl.textContent = 'We could not find this order.';
+          subEl.textContent = 'Check the link from your confirmation email and try again.';
+          return;
+        }
+        const o = await res.json();
+
+        if(o.status !== 'paid'){
+          titleEl.textContent = 'Order not paid yet.';
+          subEl.textContent = `${esc(o.packageName)} for ${esc(o.recipientName)}`;
+          contentEl.innerHTML = `<p class="pending-note">This order hasn't been paid yet, so there's nothing to track. If you meant to complete checkout, please start over from reconcilia.</p>`;
+          return;
+        }
+
+        titleEl.textContent = 'Here is where things stand.';
+        subEl.textContent = `Order #${esc(orderId)} · ${esc(o.packageName)}`;
+
+        const rows = [
+          ['Delivered to:', o.recipientName],
+          o.deliveryDate ? ['Delivery:', `${o.deliveryDate} · ${o.deliveryWindow || ''}`] : null,
+          o.amountTotal ? ['Total paid:', '$' + (o.amountTotal/100).toFixed(2) + ' ' + (o.currency || 'usd').toUpperCase()] : null,
+        ].filter(Boolean);
+
+        contentEl.innerHTML = `
+          ${renderSteps(o.fulfillmentStatus)}
+          <div class="details">
+            ${rows.map(([label, value]) => `<div><b>${esc(label)}</b> ${esc(value)}</div>`).join('')}
+          </div>
+          ${o.note ? `<div class="note-block">“${esc(o.note)}”</div>` : ''}
+          <a class="btn" href="/">Back to reconcilia</a>
+        `;
+      } catch(err){
+        titleEl.textContent = 'We could not load your order right now.';
+        subEl.textContent = 'Please try again in a moment.';
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

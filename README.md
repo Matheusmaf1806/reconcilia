@@ -35,6 +35,11 @@ and get paid — deployable on Vercel.
   the two events ad platforms weight most, mirrored server-side (Conversions
   API) so a blocked pixel or a lost connection doesn't lose the conversion.
   See [Meta Pixel + Conversions API](#meta-pixel--conversions-api) below.
+- **Order tracking + emails** — a no-login tracking page (`public/track.html`)
+  the customer can revisit any time to see the order's delivery status, and
+  automatic emails via Resend: one confirming the order right after payment,
+  and one every time you move it forward in `/admin` (preparing → on its way
+  → delivered). See [Order tracking + emails](#order-tracking--emails) below.
 
 ## Quick start (local development)
 
@@ -131,6 +136,8 @@ In **Settings → Environment Variables**, add:
 | `META_PIXEL_ID` | Optional — your Meta Pixel ID, to enable ad tracking |
 | `META_ACCESS_TOKEN` | Optional — Conversions API access token (required alongside `META_PIXEL_ID`) |
 | `META_TEST_EVENT_CODE` | Optional — only while verifying events in the Test Events tool |
+| `RESEND_API_KEY` | Optional — enables the order-confirmation and delivery-status emails |
+| `RESEND_FROM_EMAIL` | Optional — defaults to Resend's own test address; set once you've verified a domain |
 
 Redeploy after adding these (Vercel doesn't apply new env vars to an
 already-built deployment).
@@ -205,6 +212,47 @@ wrapped in its own `try`/`catch`.
 5. Events Manager → **Diagnostics** will flag any event with match-quality or
    deduplication issues if something isn't wired up right.
 
+## Order tracking + emails
+
+Two things a customer never had before: a page they can go back to and check
+on their order, and an email confirming it actually went through. Both are
+built on the same `client_token` already used to secure checkout (the random
+string the browser holds onto for its own order) — no accounts, no passwords.
+
+- **`public/track.html?id=<orderId>&token=<clientToken>`** — fetches
+  `GET /api/orders/:id/track` (which requires the matching token, so a
+  guessed order id alone can't be used to look someone else's up) and shows
+  a 4-stage progress view: Received → Preparing → On its way → Delivered,
+  plus the recipient, delivery window, amount paid and the gift note. The
+  link is only ever handed out by email — it's not shown anywhere else.
+- **Order confirmation email** — sent from the `payment_intent.succeeded`
+  webhook (`server/email.js`'s `sendOrderConfirmation`), the same moment the
+  order flips to "paid". Includes the tracking link.
+- **Delivery-status emails** — sent automatically whenever you change an
+  order's delivery status in `/admin` (`preparing`, `in_transit`, or
+  `delivered` — the initial `received` state doesn't get its own email,
+  since the confirmation email already covers that moment).
+
+Both emails go through [Resend](https://resend.com). Like the Meta
+integration, this is entirely optional — without `RESEND_API_KEY` set,
+`server/email.js` logs a warning once at startup and every send silently
+no-ops; checkout, payment and the admin panel all keep working exactly the
+same.
+
+### Setup
+
+1. Create a free account at [resend.com](https://resend.com) and grab an API
+   key from **API Keys**.
+2. Add it as `RESEND_API_KEY` (see the env var table above for Vercel, or
+   `.env` locally).
+3. Without a verified domain, Resend only lets you send to the email address
+   on your own Resend account — fine for testing, not for real customers.
+   To send to anyone, verify a domain under **Domains** (a few DNS records),
+   then set `RESEND_FROM_EMAIL` to an address on it, e.g.
+   `reconcilia <orders@yourdomain.com>`.
+4. Redeploy/restart. Resend's **Logs** tab shows every send attempt and any
+   failures, which is the fastest way to confirm it's wired up right.
+
 ## How pricing works
 
 Prices are defined **server-side only**, in `server/packages.js`. The
@@ -238,12 +286,14 @@ server/
   index.js       Local dev entrypoint (calls app.listen())
   db.js          Postgres schema + queries (pg)
   meta-capi.js   Meta Conversions API client (server-side event tracking)
+  email.js       Resend client - order-confirmation + delivery-status emails
   packages.js    Source of truth for box names/prices
 admin-panel/
   index.html     Admin UI (served only behind basic auth, not under public/)
 public/
   index.html     The landing page + checkout modal
   success.html   Fallback confirmation page for the rare 3D Secure redirect
+  track.html     No-login order tracking page (linked from emails)
   images/        Product photos
 vercel.json      Routes /api/* and /admin* to the serverless function
 ```

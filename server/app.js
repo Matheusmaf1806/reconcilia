@@ -8,6 +8,7 @@ const Stripe = require('stripe');
 const db = require('./db');
 const { getPackage } = require('./packages');
 const metaCapi = require('./meta-capi');
+const emailService = require('./email');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
@@ -70,6 +71,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
             order,
             customData: metaCapi.packageCustomData(order),
           }).catch(() => {});
+          emailService.sendOrderConfirmation(order).catch(() => {});
         }
         break;
       }
@@ -310,6 +312,35 @@ app.get('/api/orders/by-payment-intent/:id', async (req, res) => {
   }
 });
 
+// Public order-tracking page (public/track.html) - no login. Possession of
+// the per-order token (mailed to the customer, never shown anywhere else)
+// is what proves this is their order, same pattern used to protect payment
+// creation earlier in checkout.
+app.get('/api/orders/:id/track', async (req, res) => {
+  const token = typeof req.query.token === 'string' ? req.query.token : null;
+  if (!token) return res.status(400).json({ error: 'Missing tracking token.' });
+  try {
+    const order = await db.getOrderById(Number(req.params.id));
+    if (!order || order.client_token !== token) return res.status(404).json({ error: 'Order not found.' });
+
+    res.json({
+      status: order.status,
+      fulfillmentStatus: order.fulfillment_status,
+      packageName: order.package_name,
+      recipientName: order.recipient_name,
+      deliveryDate: order.delivery_date,
+      deliveryWindow: order.delivery_window,
+      note: order.note,
+      amountTotal: order.amount_total || order.price_cents,
+      currency: order.currency || 'usd',
+      createdAt: order.created_at,
+    });
+  } catch (err) {
+    console.error('Failed to load order for tracking:', err.message);
+    res.status(500).json({ error: 'Could not load order.' });
+  }
+});
+
 // ---------- Admin panel (protected) ----------
 
 const adminAuth = basicAuth({
@@ -355,6 +386,8 @@ app.patch('/api/admin/orders/:id/fulfillment-status', adminAuth, async (req, res
   try {
     const updated = await db.updateFulfillmentStatus(Number(req.params.id), fulfillmentStatus);
     if (!updated) return res.status(404).json({ error: 'Order not found.' });
+    const order = await db.getOrderById(Number(req.params.id));
+    if (order) emailService.sendStatusUpdate(order, fulfillmentStatus).catch(() => {});
     res.json({ ok: true });
   } catch (err) {
     console.error('Failed to update fulfillment status:', err.message);
