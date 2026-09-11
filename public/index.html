@@ -64,7 +64,9 @@ body{padding-bottom:74px}
 .order-modal-body h3{font:500 24px var(--serif);letter-spacing:-.02em;margin:0 0 8px}
 .order-modal-body .step-sub{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 18px}
 .modal-box-grid{display:flex;flex-direction:column;gap:10px}
-.modal-box-choice{display:block;width:100%;text-align:left;background:#fffaf2;border:1.5px solid var(--line);border-radius:6px;padding:14px 16px;cursor:pointer;transition:.15s var(--ease)}
+.modal-box-choice{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:#fffaf2;border:1.5px solid var(--line);border-radius:6px;padding:14px 16px;cursor:pointer;transition:.15s var(--ease)}
+.modal-box-choice .mb-photo{width:60px;height:60px;border-radius:4px;object-fit:cover;flex:none}
+.modal-box-choice .mb-content{flex:1;min-width:0}
 .modal-box-choice:hover{border-color:var(--red)}
 .modal-box-choice.selected{border-color:var(--red);background:#fff0e7;box-shadow:0 0 0 1px var(--red) inset}
 .modal-box-choice .mb-top{display:flex;justify-content:space-between;align-items:baseline;font:500 18px var(--serif)}
@@ -167,20 +169,32 @@ fetch('/api/config').then(r=>r.json()).then(cfg=>{
           <h3 id="step1-title">Choose your gift box</h3>
           <div class="modal-box-grid" id="modal-box-grid">
             <button type="button" class="modal-box-choice" data-package="The sweet one" data-price="5900">
-              <span class="mb-top"><strong>The sweet one</strong><span class="mb-price">$59</span></span>
-              <span class="mb-desc" id="mb-desc-1">Teddy bear, Nutella, Ferrero Rocher, Milka + Snickers</span>
+              <img class="mb-photo" src="/images/box-sweet-one.jpg" alt="">
+              <span class="mb-content">
+                <span class="mb-top"><strong>The sweet one</strong><span class="mb-price">$59</span></span>
+                <span class="mb-desc" id="mb-desc-1">Teddy bear, Nutella, Ferrero Rocher, Milka + Snickers</span>
+              </span>
             </button>
             <button type="button" class="modal-box-choice" data-package="The little gesture" data-price="9900">
-              <span class="mb-top"><strong>The little gesture</strong><span class="mb-price">$99</span></span>
-              <span class="mb-desc" id="mb-desc-2">Teddy bear, fresh flower bouquet, Ferrero Rocher + Milka</span>
+              <img class="mb-photo" src="/images/box-little-gesture.jpeg" alt="">
+              <span class="mb-content">
+                <span class="mb-top"><strong>The little gesture</strong><span class="mb-price">$99</span></span>
+                <span class="mb-desc" id="mb-desc-2">Teddy bear, fresh flower bouquet, Ferrero Rocher + Milka</span>
+              </span>
             </button>
             <button type="button" class="modal-box-choice" data-package="The apology" data-price="17900">
-              <span class="mb-top"><strong>The apology</strong><span class="mb-price">$179</span></span>
-              <span class="mb-desc" id="mb-desc-3">Teddy bear, Welch's, Pringles, Lindt, M&amp;M's + assorted candy</span>
+              <img class="mb-photo" src="/images/box-apology.jpg" alt="">
+              <span class="mb-content">
+                <span class="mb-top"><strong>The apology</strong><span class="mb-price">$179</span></span>
+                <span class="mb-desc" id="mb-desc-3">Teddy bear, Welch's, Pringles, Lindt, M&amp;M's + assorted candy</span>
+              </span>
             </button>
             <button type="button" class="modal-box-choice" data-package="The missing you" data-price="22900">
-              <span class="mb-top"><strong>The missing you</strong><span class="mb-price">$229</span></span>
-              <span class="mb-desc" id="mb-desc-4">Teddy bear, premium chocolates, nuts + full handwritten note</span>
+              <img class="mb-photo" src="/images/box-missing-you.jpg" alt="">
+              <span class="mb-content">
+                <span class="mb-top"><strong>The missing you</strong><span class="mb-price">$229</span></span>
+                <span class="mb-desc" id="mb-desc-4">Teddy bear, premium chocolates, nuts + full handwritten note</span>
+              </span>
             </button>
           </div>
         </div>
