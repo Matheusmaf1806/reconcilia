@@ -1,0 +1,65 @@
+:root{--ink:#17120f;--paper:#f7f2e9;--paper-2:#eee5d8;--muted:#7e7064;--red:#b93632;--yellow:#e6b84f;--line:rgba(23,18,15,.14);--green:#3f7a3a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px}
+
+.shell{display:flex;min-height:100vh}
+.sidebar{width:200px;flex:none;background:var(--ink);padding:24px 0}
+.sidebar .brand{padding:0 22px 22px;font-size:17px;font-weight:700;color:#fff}
+.sidebar .brand span{color:var(--red)}
+.sidebar nav a{display:block;padding:11px 22px;color:#cbbfb3;text-decoration:none;font-size:13px;border-left:3px solid transparent}
+.sidebar nav a:hover{color:#fff}
+.sidebar nav a.active{color:#fff;background:rgba(255,255,255,.06);border-left-color:var(--red)}
+.content{flex:1;min-width:0}
+.page-head{background:var(--ink);color:var(--paper);padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+.page-head h1{font-size:18px;margin:0;font-weight:600}
+.page-head button{background:transparent;border:1px solid rgba(255,255,255,.3);color:var(--paper);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+main{max-width:1200px;margin:0 auto;padding:24px 28px}
+@media(max-width:700px){
+  .shell{flex-direction:column}
+  .sidebar{width:100%;padding:14px 0}
+  .sidebar nav{display:flex;overflow-x:auto}
+  .sidebar nav a{border-left:0;border-bottom:3px solid transparent;white-space:nowrap}
+  .sidebar nav a.active{border-left:0;border-bottom-color:var(--red)}
+}
+
+.stats{display:flex;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+.stat{background:#fffaf2;border:1px solid var(--line);border-radius:6px;padding:14px 18px;min-width:140px}
+.stat b{display:block;font-size:22px}
+.stat span{color:var(--muted);font-size:12px}
+
+table{width:100%;border-collapse:collapse;background:#fffaf2;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+th{background:var(--paper-2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+tr.row{cursor:pointer}
+tr.row:hover{background:#fff3df}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.badge.paid{background:#e3f0df;color:var(--green)}
+.badge.pending{background:#fbeecb;color:#8a6a1c}
+.badge.expired,.badge.canceled{background:#f3dcdb;color:var(--red)}
+.badge.received{background:#eee8de;color:var(--muted)}
+.badge.preparing{background:#fbeecb;color:#8a6a1c}
+.badge.in_transit{background:#e2e8f5;color:#3a4f8f}
+.badge.delivered{background:#e3f0df;color:var(--green)}
+.fstatus-select{font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:#fffaf2;color:var(--ink)}
+
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.overlay{position:fixed;inset:0;background:rgba(23,18,15,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.overlay.show{display:flex}
+.modal{background:var(--paper);border-radius:8px;max-width:560px;width:100%;max-height:85vh;overflow:auto;padding:28px}
+.modal h2{margin:0 0 4px;font-size:20px}
+.modal .sub{color:var(--muted);font-size:12px;margin-bottom:18px}
+.modal dl{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:13px;margin:0}
+.modal dt{color:var(--muted)}
+.modal dd{margin:0}
+.note-block{background:#fff3cf;border-left:3px solid var(--red);padding:12px 14px;margin-top:16px;font-style:italic;white-space:pre-wrap}
+.modal-close{float:right;background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
+
+section.panel{background:#fffaf2;border:1px solid var(--line);border-radius:6px;padding:18px 20px;margin-bottom:22px}
+section.panel h2{margin:0 0 14px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.funnel-row{display:grid;grid-template-columns:110px 1fr 90px;align-items:center;gap:12px;padding:6px 0;font-size:13px}
+.funnel-row .track{background:var(--paper-2);border-radius:3px;height:20px;overflow:hidden}
+.funnel-row .fill{background:var(--red);height:100%;border-radius:3px;transition:width .3s ease}
+.funnel-row .count{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}
+.funnel-row .drop{color:var(--red);font-size:11px}

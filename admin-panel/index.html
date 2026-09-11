@@ -4,70 +4,29 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>reconcilia — Orders</title>
-  <style>
-    :root{--ink:#17120f;--paper:#f7f2e9;--paper-2:#eee5d8;--muted:#7e7064;--red:#b93632;--yellow:#e6b84f;--line:rgba(23,18,15,.14);--green:#3f7a3a}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px}
-    header{background:var(--ink);color:var(--paper);padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
-    header h1{font-size:18px;margin:0;font-weight:600}
-    header button{background:transparent;border:1px solid rgba(255,255,255,.3);color:var(--paper);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px}
-    main{max-width:1200px;margin:0 auto;padding:24px 28px}
-    .stats{display:flex;gap:14px;margin-bottom:22px;flex-wrap:wrap}
-    .stat{background:#fffaf2;border:1px solid var(--line);border-radius:6px;padding:14px 18px;min-width:140px}
-    .stat b{display:block;font-size:22px}
-    .stat span{color:var(--muted);font-size:12px}
-    table{width:100%;border-collapse:collapse;background:#fffaf2;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-    th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
-    th{background:var(--paper-2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-    tr:last-child td{border-bottom:0}
-    tr.row{cursor:pointer}
-    tr.row:hover{background:#fff3df}
-    .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
-    .badge.paid{background:#e3f0df;color:var(--green)}
-    .badge.pending{background:#fbeecb;color:#8a6a1c}
-    .badge.expired,.badge.canceled{background:#f3dcdb;color:var(--red)}
-    .badge.received{background:#eee8de;color:var(--muted)}
-    .badge.preparing{background:#fbeecb;color:#8a6a1c}
-    .badge.in_transit{background:#e2e8f5;color:#3a4f8f}
-    .badge.delivered{background:#e3f0df;color:var(--green)}
-    .fstatus-select{font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:#fffaf2;color:var(--ink)}
-    .empty{padding:40px;text-align:center;color:var(--muted)}
-    .overlay{position:fixed;inset:0;background:rgba(23,18,15,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
-    .overlay.show{display:flex}
-    .modal{background:var(--paper);border-radius:8px;max-width:560px;width:100%;max-height:85vh;overflow:auto;padding:28px}
-    .modal h2{margin:0 0 4px;font-size:20px}
-    .modal .sub{color:var(--muted);font-size:12px;margin-bottom:18px}
-    .modal dl{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:13px;margin:0}
-    .modal dt{color:var(--muted)}
-    .modal dd{margin:0}
-    .note-block{background:#fff3cf;border-left:3px solid var(--red);padding:12px 14px;margin-top:16px;font-style:italic;white-space:pre-wrap}
-    .modal-close{float:right;background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
-    .refresh{background:var(--ink);color:var(--paper);border:0;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:14px}
-    section.panel{background:#fffaf2;border:1px solid var(--line);border-radius:6px;padding:18px 20px;margin-bottom:22px}
-    section.panel h2{margin:0 0 14px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-    .funnel-row{display:grid;grid-template-columns:110px 1fr 90px;align-items:center;gap:12px;padding:6px 0;font-size:13px}
-    .funnel-row .track{background:var(--paper-2);border-radius:3px;height:20px;overflow:hidden}
-    .funnel-row .fill{background:var(--red);height:100%;border-radius:3px;transition:width .3s ease}
-    .funnel-row .count{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}
-    .funnel-row .drop{color:var(--red);font-size:11px}
-  </style>
+  <link rel="stylesheet" href="/admin/shared.css" />
 </head>
 <body>
-  <header>
-    <h1>reconcilia — Orders</h1>
-    <button onclick="location.reload()">Refresh</button>
-  </header>
-  <main>
-    <section class="panel">
-      <h2>Funnel — where visitors drop off</h2>
-      <div id="funnel-stats" class="stats" style="margin-bottom:16px"></div>
-      <div id="funnel-chart">Loading…</div>
-      <h2 style="margin-top:22px">By box — chosen vs. purchased</h2>
-      <div id="funnel-packages"></div>
-    </section>
-    <div id="stats" class="stats"></div>
-    <div id="content">Loading orders…</div>
-  </main>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">reconcilia <span>&hearts;</span></div>
+      <nav>
+        <a href="/admin/" class="active">Orders</a>
+        <a href="/admin/funnel">Funnel</a>
+        <a href="/admin/sessions">Sessions</a>
+      </nav>
+    </aside>
+    <div class="content">
+      <div class="page-head">
+        <h1>Orders</h1>
+        <button onclick="location.reload()">Refresh</button>
+      </div>
+      <main>
+        <div id="stats" class="stats"></div>
+        <div id="content">Loading orders…</div>
+      </main>
+    </div>
+  </div>
 
   <div class="overlay" id="overlay">
     <div class="modal">
@@ -76,27 +35,8 @@
     </div>
   </div>
 
+  <script src="/admin/shared.js"></script>
   <script>
-    function fmtMoney(cents, currency){
-      if(cents === null || cents === undefined) return '—';
-      return '$' + (cents/100).toFixed(2) + ' ' + (currency ? currency.toUpperCase() : '');
-    }
-    function fmtDate(iso){
-      if(!iso) return '—';
-      // Postgres (via `pg`) already returns full ISO 8601 timestamps (with a
-      // trailing Z), so they parse directly - no reformatting needed.
-      const d = new Date(iso);
-      return isNaN(d.getTime()) ? '—' : d.toLocaleString();
-    }
-    function esc(s){
-      const d = document.createElement('div');
-      d.textContent = s == null ? '' : String(s);
-      return d.innerHTML;
-    }
-
-    const FULFILLMENT_LABELS = { received: 'Recebido', preparing: 'Em preparação', in_transit: 'Em trânsito', delivered: 'Entregue' };
-    function fstatusLabel(v){ return FULFILLMENT_LABELS[v] || v; }
-
     let orders = [];
 
     async function load(){
@@ -105,64 +45,6 @@
       orders = await res.json();
       renderStats();
       renderTable();
-      loadFunnel();
-    }
-
-    function fmtDuration(seconds){
-      if(!seconds) return '0s';
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return m ? `${m}m ${s}s` : `${s}s`;
-    }
-
-    async function loadFunnel(){
-      const chart = document.getElementById('funnel-chart');
-      try {
-        const res = await fetch('/api/admin/funnel');
-        if(!res.ok){ chart.innerHTML = '<div class="empty">Could not load funnel data.</div>'; return; }
-        const data = await res.json();
-        document.getElementById('funnel-stats').innerHTML = `
-          <div class="stat"><b>${esc(data.totalSessions)}</b><span>Visitor sessions tracked</span></div>
-          <div class="stat"><b>${esc(fmtDuration(data.avgSecondsOnPage))}</b><span>Avg. time on page</span></div>
-        `;
-        if(!data.totalSessions){
-          chart.innerHTML = '<div class="empty">No visitor activity tracked yet.</div>';
-          return;
-        }
-        const maxCount = data.steps[0].count || 1;
-        chart.innerHTML = data.steps.map((s, i) => {
-          const pct = Math.round((s.count / maxCount) * 100);
-          const prev = i > 0 ? data.steps[i - 1].count : null;
-          const dropOff = prev ? Math.round(((prev - s.count) / prev) * 100) : null;
-          return `
-            <div class="funnel-row">
-              <span>${esc(s.label)}</span>
-              <div class="track"><div class="fill" style="width:${pct}%"></div></div>
-              <span class="count">${esc(s.count)}${dropOff !== null && dropOff > 0 ? `<br><span class="drop">-${dropOff}%</span>` : ''}</span>
-            </div>
-          `;
-        }).join('');
-
-        const packagesEl = document.getElementById('funnel-packages');
-        if(!data.packages || !data.packages.length){
-          packagesEl.innerHTML = '<div class="empty">No box selected yet.</div>';
-        } else {
-          const maxChosen = Math.max(...data.packages.map(p => p.chosen), 1);
-          packagesEl.innerHTML = data.packages.map(p => {
-            const pct = Math.round((p.chosen / maxChosen) * 100);
-            const rate = p.chosen ? Math.round((p.purchased / p.chosen) * 100) : 0;
-            return `
-              <div class="funnel-row">
-                <span>${esc(p.packageName)}</span>
-                <div class="track"><div class="fill" style="width:${pct}%"></div></div>
-                <span class="count">${esc(p.purchased)}/${esc(p.chosen)}<br><span style="color:var(--muted);font-size:11px">${rate}% bought</span></span>
-              </div>
-            `;
-          }).join('');
-        }
-      } catch(err){
-        chart.innerHTML = '<div class="empty">Could not load funnel data.</div>';
-      }
     }
 
     function renderStats(){

@@ -96,11 +96,13 @@ function ensureSchema() {
         id TEXT PRIMARY KEY,
         furthest_step INTEGER NOT NULL DEFAULT 0,
         package_name TEXT,
+        zip_checked TEXT,
         seconds_on_page INTEGER NOT NULL DEFAULT 0,
         order_id INTEGER,
         first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS zip_checked TEXT;
       CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at);
     `);
   }
@@ -119,19 +121,26 @@ const FUNNEL_STEPS = ['Landed', 'Box', 'Delivery', 'Message', 'Details', 'Pay', 
 // step change, plus a heartbeat while the tab stays open). GREATEST/COALESCE
 // make it safe for pings to arrive out of order or restate stale values -
 // progress and time on page only ever move forward.
-async function upsertSession({ id, furthestStep, packageName, secondsOnPage, orderId }) {
+async function upsertSession({ id, furthestStep, packageName, zipChecked, secondsOnPage, orderId }) {
   await ensureSchema();
   await pool.query(
-    `INSERT INTO sessions (id, furthest_step, package_name, seconds_on_page, order_id, first_seen_at, last_seen_at)
-     VALUES ($1, $2, $3, $4, $5, now(), now())
+    `INSERT INTO sessions (id, furthest_step, package_name, zip_checked, seconds_on_page, order_id, first_seen_at, last_seen_at)
+     VALUES ($1, $2, $3, $4, $5, $6, now(), now())
      ON CONFLICT (id) DO UPDATE SET
        furthest_step = GREATEST(sessions.furthest_step, EXCLUDED.furthest_step),
        package_name = COALESCE(EXCLUDED.package_name, sessions.package_name),
+       zip_checked = COALESCE(EXCLUDED.zip_checked, sessions.zip_checked),
        seconds_on_page = GREATEST(sessions.seconds_on_page, EXCLUDED.seconds_on_page),
        order_id = COALESCE(EXCLUDED.order_id, sessions.order_id),
        last_seen_at = now()`,
-    [id, furthestStep, packageName || null, secondsOnPage, orderId || null]
+    [id, furthestStep, packageName || null, zipChecked || null, secondsOnPage, orderId || null]
   );
+}
+
+async function listSessions(limit = 200) {
+  await ensureSchema();
+  const result = await pool.query(`SELECT * FROM sessions ORDER BY last_seen_at DESC LIMIT $1`, [limit]);
+  return result.rows;
 }
 
 async function getFunnelStats() {
@@ -312,6 +321,7 @@ module.exports = {
   getOrderByPaymentIntentId,
   listOrders,
   upsertSession,
+  listSessions,
   getFunnelStats,
   FULFILLMENT_STATUSES,
   updateFulfillmentStatus,

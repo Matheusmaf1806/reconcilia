@@ -366,6 +366,7 @@ translate(current);
   const trackSessionId = getSessionId();
   const pageLoadTime = Date.now();
   let furthestStep = 0; // 0 landed, 1-5 modal steps (Box/Delivery/Message/Details/Pay), 6 purchased
+  let lastZipChecked = null;
 
   function sendTrackPing(useBeacon){
     if(!trackSessionId) return;
@@ -373,6 +374,7 @@ translate(current);
       sessionId: trackSessionId,
       furthestStep,
       packageName: state.packageName || undefined,
+      zipChecked: lastZipChecked || undefined,
       secondsOnPage: Math.round((Date.now() - pageLoadTime) / 1000),
       orderId: (typeof currentOrderId !== 'undefined' && currentOrderId) || undefined,
     });
@@ -687,11 +689,14 @@ translate(current);
 
   const previousCheckDelivery = window.checkDelivery;
   window.checkDelivery = function(){
+    const zipEl = document.getElementById('cep');
+    if(zipEl) lastZipChecked = zipEl.value.replace(/\D/g, '').slice(0, 5);
     previousCheckDelivery();
     localizeDayLabels();
     localizeSelectionText();
     refreshModalSummary();
     refreshBar();
+    sendTrackPing(false);
   };
 
   const daysContainer = document.getElementById('days');

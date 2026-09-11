@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>reconcilia — Sessions</title>
+  <link rel="stylesheet" href="/admin/shared.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">reconcilia <span>&hearts;</span></div>
+      <nav>
+        <a href="/admin/">Orders</a>
+        <a href="/admin/funnel">Funnel</a>
+        <a href="/admin/sessions" class="active">Sessions</a>
+      </nav>
+    </aside>
+    <div class="content">
+      <div class="page-head">
+        <h1>Sessions</h1>
+        <button onclick="location.reload()">Refresh</button>
+      </div>
+      <main>
+        <div id="stats" class="stats"></div>
+        <div id="content">Loading sessions…</div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/admin/shared.js"></script>
+  <script>
+    async function load(){
+      const content = document.getElementById('content');
+      try {
+        const res = await fetch('/api/admin/sessions');
+        if(res.status === 401){ content.innerHTML = '<div class="empty">Not authorized.</div>'; return; }
+        if(!res.ok){ content.innerHTML = '<div class="empty">Could not load sessions.</div>'; return; }
+        const sessions = await res.json();
+        renderStats(sessions);
+        renderTable(sessions);
+      } catch(err){
+        content.innerHTML = '<div class="empty">Could not load sessions.</div>';
+      }
+    }
+
+    function renderStats(sessions){
+      const withZip = sessions.filter(s => s.zip_checked).length;
+      const converted = sessions.filter(s => s.order_id).length;
+      const stats = [
+        { label: 'Sessions tracked', value: sessions.length },
+        { label: 'Checked a ZIP', value: withZip },
+        { label: 'Converted to order', value: converted },
+      ];
+      document.getElementById('stats').innerHTML = stats.map(s =>
+        `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`
+      ).join('');
+    }
+
+    function renderTable(sessions){
+      const content = document.getElementById('content');
+      if(!sessions.length){
+        content.innerHTML = '<div class="empty">No sessions tracked yet.</div>';
+        return;
+      }
+      const rows = sessions.map(s => `
+        <tr>
+          <td style="font-family:monospace;font-size:11px">${esc(s.id.slice(0, 8))}…</td>
+          <td>${fmtDate(s.first_seen_at)}</td>
+          <td>${fmtDate(s.last_seen_at)}</td>
+          <td>${esc(FUNNEL_STEP_LABELS[s.furthest_step] || s.furthest_step)}</td>
+          <td>${esc(s.package_name) || '—'}</td>
+          <td style="font-family:monospace">${esc(s.zip_checked) || '—'}</td>
+          <td>${fmtDuration(s.seconds_on_page)}</td>
+          <td>${s.order_id ? `<span class="badge paid">#${esc(s.order_id)}</span>` : '<span class="badge pending">no</span>'}</td>
+        </tr>
+      `).join('');
+      content.innerHTML = `
+        <table>
+          <thead><tr><th>Session</th><th>First seen</th><th>Last seen</th><th>Furthest step</th><th>Package</th><th>ZIP checked</th><th>Time on page</th><th>Order</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -116,9 +116,11 @@ app.post('/api/track', async (req, res) => {
   const secondsOnPage = Math.max(0, Math.min(Number(b.secondsOnPage) || 0, 24 * 60 * 60));
   const packageName = isNonEmptyString(b.packageName, 100) ? b.packageName.trim() : null;
   const orderId = Number.isInteger(Number(b.orderId)) && Number(b.orderId) > 0 ? Number(b.orderId) : null;
+  const zipDigits = typeof b.zipChecked === 'string' ? b.zipChecked.replace(/\D/g, '').slice(0, 5) : '';
+  const zipChecked = zipDigits.length === 5 ? zipDigits : null;
 
   try {
-    await db.upsertSession({ id: sessionId, furthestStep, packageName, secondsOnPage, orderId });
+    await db.upsertSession({ id: sessionId, furthestStep, packageName, zipChecked, secondsOnPage, orderId });
   } catch (err) {
     console.error('Failed to record funnel tracking ping:', err.message);
   }
@@ -398,6 +400,15 @@ app.get('/api/admin/funnel', adminAuth, async (req, res) => {
   }
 });
 
+app.get('/api/admin/sessions', adminAuth, async (req, res) => {
+  try {
+    res.json(await db.listSessions());
+  } catch (err) {
+    console.error('Failed to list sessions:', err.message);
+    res.status(500).json({ error: 'Could not load sessions.' });
+  }
+});
+
 app.get('/api/admin/orders/:id', adminAuth, async (req, res) => {
   try {
     const order = await db.getOrderById(Number(req.params.id));
@@ -426,6 +437,6 @@ app.patch('/api/admin/orders/:id/fulfillment-status', adminAuth, async (req, res
   }
 });
 
-app.use('/admin', adminAuth, express.static(path.join(__dirname, '..', 'admin-panel')));
+app.use('/admin', adminAuth, express.static(path.join(__dirname, '..', 'admin-panel'), { extensions: ['html'] }));
 
 module.exports = app;
