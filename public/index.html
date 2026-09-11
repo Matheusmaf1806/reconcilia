@@ -699,6 +699,17 @@ translate(current);
     sendTrackPing(false);
   };
 
+  // Capture the ZIP as soon as it's fully typed, not only when the visitor
+  // clicks "Check delivery →" — many people type it and never click before
+  // giving up, and we still want to know what they tried.
+  const cepTrackEl = document.getElementById('cep');
+  if(cepTrackEl){
+    cepTrackEl.addEventListener('input', () => {
+      const digits = cepTrackEl.value.replace(/\D/g, '').slice(0, 5);
+      if(digits.length === 5) lastZipChecked = digits;
+    });
+  }
+
   const daysContainer = document.getElementById('days');
   if(daysContainer) daysContainer.addEventListener('click', () => { localizeSelectionText(); refreshModalSummary(); refreshBar(); saveDraft(); });
   const slotsContainer = document.getElementById('slots');
