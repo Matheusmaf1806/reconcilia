@@ -62,6 +62,8 @@
       <h2>Funnel — where visitors drop off</h2>
       <div id="funnel-stats" class="stats" style="margin-bottom:16px"></div>
       <div id="funnel-chart">Loading…</div>
+      <h2 style="margin-top:22px">By box — chosen vs. purchased</h2>
+      <div id="funnel-packages"></div>
     </section>
     <div id="stats" class="stats"></div>
     <div id="content">Loading orders…</div>
@@ -140,6 +142,24 @@
             </div>
           `;
         }).join('');
+
+        const packagesEl = document.getElementById('funnel-packages');
+        if(!data.packages || !data.packages.length){
+          packagesEl.innerHTML = '<div class="empty">No box selected yet.</div>';
+        } else {
+          const maxChosen = Math.max(...data.packages.map(p => p.chosen), 1);
+          packagesEl.innerHTML = data.packages.map(p => {
+            const pct = Math.round((p.chosen / maxChosen) * 100);
+            const rate = p.chosen ? Math.round((p.purchased / p.chosen) * 100) : 0;
+            return `
+              <div class="funnel-row">
+                <span>${esc(p.packageName)}</span>
+                <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+                <span class="count">${esc(p.purchased)}/${esc(p.chosen)}<br><span style="color:var(--muted);font-size:11px">${rate}% bought</span></span>
+              </div>
+            `;
+          }).join('');
+        }
       } catch(err){
         chart.innerHTML = '<div class="empty">Could not load funnel data.</div>';
       }

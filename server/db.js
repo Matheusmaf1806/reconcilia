@@ -71,6 +71,7 @@ function ensureSchema() {
         client_ip TEXT,
         client_user_agent TEXT,
         fulfillment_status TEXT NOT NULL DEFAULT 'received',
+        abandoned_email_sent_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
@@ -82,6 +83,7 @@ function ensureSchema() {
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_ip TEXT;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_user_agent TEXT;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS fulfillment_status TEXT NOT NULL DEFAULT 'received';
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS abandoned_email_sent_at TIMESTAMPTZ;
 
       CREATE INDEX IF NOT EXISTS idx_orders_session ON orders(stripe_session_id);
       CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -134,9 +136,22 @@ async function upsertSession({ id, furthestStep, packageName, secondsOnPage, ord
 
 async function getFunnelStats() {
   await ensureSchema();
-  const [countsResult, avgResult] = await Promise.all([
+  const [countsResult, avgResult, packagesResult] = await Promise.all([
     pool.query(`SELECT furthest_step, COUNT(*)::int AS count FROM sessions GROUP BY furthest_step`),
     pool.query(`SELECT ROUND(AVG(seconds_on_page))::int AS avg_seconds, COUNT(*)::int AS total FROM sessions`),
+    // Per-package view: of everyone who ever had this box selected (however
+    // briefly - package_name reflects whichever box they most recently had
+    // picked), how many went on to buy it. Separate from the step funnel
+    // above, which lumps every box together.
+    pool.query(`
+      SELECT package_name,
+        COUNT(*)::int AS chosen,
+        COUNT(*) FILTER (WHERE furthest_step = 6)::int AS purchased
+      FROM sessions
+      WHERE package_name IS NOT NULL
+      GROUP BY package_name
+      ORDER BY chosen DESC
+    `),
   ]);
   const countByStep = {};
   countsResult.rows.forEach(r => { countByStep[r.furthest_step] = r.count; });
@@ -150,6 +165,7 @@ async function getFunnelStats() {
     steps,
     totalSessions: avgResult.rows[0].total || 0,
     avgSecondsOnPage: avgResult.rows[0].avg_seconds || 0,
+    packages: packagesResult.rows.map(r => ({ packageName: r.package_name, chosen: r.chosen, purchased: r.purchased })),
   };
 }
 
@@ -219,6 +235,28 @@ async function updateFulfillmentStatus(id, fulfillmentStatus) {
   return result.rows.length > 0;
 }
 
+// Orders left pending (or failed) long enough that the customer probably
+// isn't coming right back, who haven't already gotten a reminder. Capped so
+// one cron run can't try to send an unbounded number of emails.
+async function getAbandonedOrders(minMinutesOld, limit = 50) {
+  await ensureSchema();
+  const result = await pool.query(
+    `SELECT * FROM orders
+     WHERE status IN ('pending', 'failed')
+       AND abandoned_email_sent_at IS NULL
+       AND created_at <= now() - ($1 || ' minutes')::interval
+     ORDER BY created_at ASC
+     LIMIT $2`,
+    [minMinutesOld, limit]
+  );
+  return result.rows;
+}
+
+async function markAbandonedCartEmailSent(id) {
+  await ensureSchema();
+  await pool.query(`UPDATE orders SET abandoned_email_sent_at = now() WHERE id = $1`, [id]);
+}
+
 async function attachPaymentIntent(orderId, paymentIntentId) {
   await ensureSchema();
   await pool.query(
@@ -277,4 +315,6 @@ module.exports = {
   getFunnelStats,
   FULFILLMENT_STATUSES,
   updateFulfillmentStatus,
+  getAbandonedOrders,
+  markAbandonedCartEmailSent,
 };

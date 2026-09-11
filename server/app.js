@@ -343,6 +343,35 @@ app.get('/api/orders/:id/track', async (req, res) => {
   }
 });
 
+// ---------- Scheduled jobs (Vercel Cron) ----------
+
+// Vercel signs its own cron requests with this header - set CRON_SECRET to
+// require it. Without it set, the endpoint still works (handy for local
+// testing) but anyone who finds the URL could trigger it.
+app.get('/api/cron/abandoned-cart', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: 'Unauthorized.' });
+  }
+  try {
+    const orders = await db.getAbandonedOrders(45);
+    let sent = 0;
+    for (const order of orders) {
+      try {
+        await emailService.sendAbandonedCartReminder(order);
+        await db.markAbandonedCartEmailSent(order.id);
+        sent += 1;
+      } catch (err) {
+        console.error(`Failed to send abandoned-cart email for order ${order.id}:`, err.message);
+      }
+    }
+    res.json({ checked: orders.length, sent });
+  } catch (err) {
+    console.error('Abandoned-cart cron failed:', err.message);
+    res.status(500).json({ error: 'Cron run failed.' });
+  }
+});
+
 // ---------- Admin panel (protected) ----------
 
 const adminAuth = basicAuth({

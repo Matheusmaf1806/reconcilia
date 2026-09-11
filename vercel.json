@@ -10,5 +10,8 @@
     "api/index.js": {
       "includeFiles": "admin-panel/**"
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/abandoned-cart", "schedule": "0 0 * * *" }
+  ]
 }

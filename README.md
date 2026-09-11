@@ -28,8 +28,10 @@ and get paid — deployable on Vercel.
   order showing the package, the recipient's address, the delivery window,
   the sender's contact info, and the gift note ("carta"). A funnel section
   at the top shows drop-off at each checkout step and average time on page,
-  built from anonymous session pings — no name/email/address involved, and
-  it works even for the majority of visitors who never place an order.
+  plus a breakdown per box (chosen vs. purchased) so an underperforming
+  price tier shows up on its own instead of being averaged away — built
+  from anonymous session pings, no name/email/address involved, and it
+  works even for the majority of visitors who never place an order.
 - **Meta Pixel + Conversions API** — tracks ViewContent, InitiateCheckout,
   AddPaymentInfo and Purchase, each fired from the browser (Pixel) and, for
   the two events ad platforms weight most, mirrored server-side (Conversions
@@ -38,8 +40,22 @@ and get paid — deployable on Vercel.
 - **Order tracking + emails** — a no-login tracking page (`public/track.html`)
   the customer can revisit any time to see the order's delivery status, and
   automatic emails via Resend: one confirming the order right after payment,
-  and one every time you move it forward in `/admin` (preparing → on its way
-  → delivered). See [Order tracking + emails](#order-tracking--emails) below.
+  one every time you move it forward in `/admin` (preparing → on its way →
+  delivered), and one abandoned-cart reminder (a daily Vercel Cron job) for
+  anyone who filled in their details but never paid. See
+  [Order tracking + emails](#order-tracking--emails) below.
+- **Same-day cutoff countdown** — the topbar's "order by 2 PM" line becomes a
+  live countdown ("2h 14m left…") computed in Orlando's own timezone
+  regardless of the visitor's, falling back to the static text if it can't
+  run. After the cutoff it switches to a "next available date at checkout"
+  message instead of counting into negative numbers.
+- **Link previews** — Open Graph / Twitter Card tags so sharing the site's
+  link in WhatsApp, Instagram or iMessage shows a real title, description
+  and photo instead of a blank card — this is a gifting site people forward
+  to each other, so that preview is often the first thing a recipient sees.
+  The `og:image`/`og:url` tags in `public/index.html`'s `<head>` are
+  hardcoded to `reconcilia.mafinho.com.br` (most platforms require an
+  absolute URL) — update them if the domain ever changes.
 
 ## Quick start (local development)
 
@@ -138,6 +154,7 @@ In **Settings → Environment Variables**, add:
 | `META_TEST_EVENT_CODE` | Optional — only while verifying events in the Test Events tool |
 | `RESEND_API_KEY` | Optional — enables the order-confirmation and delivery-status emails |
 | `RESEND_FROM_EMAIL` | Optional — defaults to Resend's own test address; set once you've verified a domain |
+| `CRON_SECRET` | Optional — protects `/api/cron/abandoned-cart` from being triggered by anyone who finds the URL |
 
 Redeploy after adding these (Vercel doesn't apply new env vars to an
 already-built deployment).
@@ -232,8 +249,19 @@ string the browser holds onto for its own order) — no accounts, no passwords.
   order's delivery status in `/admin` (`preparing`, `in_transit`, or
   `delivered` — the initial `received` state doesn't get its own email,
   since the confirmation email already covers that moment).
+- **Abandoned-cart email** — `GET /api/cron/abandoned-cart`, run daily by
+  Vercel Cron (`vercel.json`'s `crons` entry - Vercel's free Hobby plan only
+  allows daily schedules; on Pro you can tighten it, e.g. `"0 * * * *"` for
+  hourly). Finds orders left `pending`/`failed` for 45+ minutes that haven't
+  already gotten a reminder (`abandoned_email_sent_at`, set once sent so it
+  never fires twice), and emails a link back to `/?box=<packageName>` -
+  which reopens the checkout modal with that box already picked rather than
+  trying to fully restore what they'd typed. Set `CRON_SECRET` so the
+  endpoint only accepts Vercel's own scheduled calls (it checks the request
+  carries `Authorization: Bearer $CRON_SECRET`); without it, the endpoint
+  still runs, just unauthenticated.
 
-Both emails go through [Resend](https://resend.com). Like the Meta
+All three go through [Resend](https://resend.com). Like the Meta
 integration, this is entirely optional — without `RESEND_API_KEY` set,
 `server/email.js` logs a warning once at startup and every send silently
 no-ops; checkout, payment and the admin panel all keep working exactly the
@@ -295,5 +323,5 @@ public/
   success.html   Fallback confirmation page for the rare 3D Secure redirect
   track.html     No-login order tracking page (linked from emails)
   images/        Product photos
-vercel.json      Routes /api/* and /admin* to the serverless function
+vercel.json      Routes /api/* and /admin* to the function; clean URLs; the abandoned-cart cron schedule
 ```

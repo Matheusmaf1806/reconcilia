@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>reconcilia  a gesture that arrives before pride</title>
   <meta name="description" content="Hand-packed gift boxes delivered today, with a note written in your own words." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="reconcilia" />
+  <meta property="og:title" content="reconcilia — same-day gift boxes in Orlando" />
+  <meta property="og:description" content="Hand-packed gift boxes delivered today, with a note written in your own words." />
+  <meta property="og:image" content="https://reconcilia.mafinho.com.br/images/box-apology.jpg" />
+  <meta property="og:url" content="https://reconcilia.mafinho.com.br/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="reconcilia — same-day gift boxes in Orlando" />
+  <meta name="twitter:description" content="Hand-packed gift boxes delivered today, with a note written in your own words." />
+  <meta name="twitter:image" content="https://reconcilia.mafinho.com.br/images/box-apology.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
@@ -118,7 +128,7 @@ fetch('/api/config').then(r=>r.json()).then(cfg=>{
 </script>
 </head>
 <body>
-  <div class="topbar"><b>SAME-DAY DELIVERY IN ORLANDO</b> order by 2 PM · delivery included in every price</div>
+  <div class="topbar"><b>SAME-DAY DELIVERY IN ORLANDO</b> <span id="cutoff-line">order by 2 PM · delivery included in every price</span></div>
   <header><div class="wrap nav"><a class="logo" href="#top">reconcilia<span> <i>♥</i></span></a><nav class="navlinks"><a href="#boxes">The boxes</a><a href="#note-section">The note</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a></nav><div class="lang-switch"><select id="language-switch" aria-label="Language"><option value="en">EN</option><option value="es">ES</option><option value="pt">PT</option></select></div><a class="nav-cta" href="#delivery">Check availability →</a></div></header>
   <main id="top">
     <section class="wrap hero"><div><div class="eyebrow">gifts for difficult conversations</div><h1>The apology that <em>arrives before</em> pride.</h1><p class="lead">A full-size gift box packed with recognizable favorites, a soft teddy bear, and your words on real gift paper. For when a text message is not enough.</p><div class="actions"><a class="btn red" href="#delivery">I want to fix this today <span>↗</span></a><a class="btn ghost" href="#boxes">See the boxes</a></div><div class="proof"><div><span class="stars">★★★★★</span><strong>4.9/5</strong><span>from people who chose a real gesture</span></div><div><strong>3h</strong><span>average delivery window</span></div><div><strong>0</strong><span>generic apologies</span></div></div></div><div class="hero-visual"><img class="hero-photo" src="/images/box-sweet-one.jpg" alt="The $59 gift box with teddy bear, Nutella, Ferrero Rocher, Milka and Snickers"><div class="seal">HANDMADE<br>WITH INTENTION</div><div class="float-card"><small>the detail that changes everything</small><p>“I messed up. But I do not want this to become distance.”</p></div></div></section>
@@ -1002,6 +1012,52 @@ translate(current);
   // ---------- init ----------
   restoreDraft();
   localizeAll();
+
+  // Abandoned-cart emails link back here with ?box=<package>, reopening the
+  // modal with that box already picked instead of asking them to start
+  // completely from scratch.
+  const resumeBox = new URLSearchParams(window.location.search).get('box');
+  if(resumeBox && PRICES[resumeBox] !== undefined){
+    openModal(2, resumeBox);
+  }
+})();
+</script>
+<script>
+// Live countdown to the 2 PM Eastern same-day cutoff, independent of the
+// visitor's own timezone. Falls back to the static text above until this
+// runs, and again if Intl.DateTimeFormat's timeZone option isn't supported.
+(function(){
+  const CUTOFF_COPY = {
+    en: { before: (h,m) => h+'h '+m+'m left to order for delivery today', after: "Today's cutoff has passed — next available date shown at checkout" },
+    pt: { before: (h,m) => h+'h '+m+'m para garantir a entrega hoje', after: 'Horário de hoje encerrado — próxima data disponível no checkout' },
+    es: { before: (h,m) => h+'h '+m+'m para pedir la entrega de hoy', after: 'Horario de hoy cerrado — próxima fecha disponible en el checkout' },
+  };
+  const CLOCK_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 15"></polyline></svg>';
+
+  function lang(){
+    try { const l = localStorage.getItem('reconcilia-lang'); return CUTOFF_COPY[l] ? l : 'en'; } catch(e){ return 'en'; }
+  }
+  function minutesUntilCutoffET(){
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date());
+    const map = {}; parts.forEach(p => { map[p.type] = p.value; });
+    const nowSeconds = Number(map.hour) * 3600 + Number(map.minute) * 60 + Number(map.second);
+    return (14 * 3600 - nowSeconds) / 60;
+  }
+  function tick(){
+    const el = document.getElementById('cutoff-line');
+    if(!el) return;
+    try {
+      const minutesLeft = minutesUntilCutoffET();
+      const copy = CUTOFF_COPY[lang()];
+      if(minutesLeft > 0){
+        el.innerHTML = CLOCK_ICON + copy.before(Math.floor(minutesLeft / 60), Math.floor(minutesLeft % 60));
+      } else {
+        el.innerHTML = CLOCK_ICON + copy.after;
+      }
+    } catch(e){ /* leave the static fallback text in place */ }
+  }
+  tick();
+  setInterval(tick, 60000);
 })();
 </script>
 </body>

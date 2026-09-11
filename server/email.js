@@ -46,7 +46,7 @@ function trackingUrl(order) {
   return `${PUBLIC_BASE_URL}/track?id=${order.id}&token=${order.client_token}`;
 }
 
-function layout({ title, bodyHtml, order }) {
+function layout({ title, bodyHtml, order, ctaLabel = 'Track your order &rarr;', ctaUrl }) {
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;background:#f7f2e9;padding:32px 16px">
       <div style="max-width:520px;margin:0 auto;background:#fffaf2;border-radius:8px;padding:32px;border:1px solid rgba(23,18,15,.1)">
@@ -54,7 +54,7 @@ function layout({ title, bodyHtml, order }) {
         <h1 style="font-size:21px;color:#17120f;margin:0 0 14px">${escapeHtml(title)}</h1>
         ${bodyHtml}
         <p style="margin-top:26px">
-          <a href="${trackingUrl(order)}" style="background:#b93632;color:#fff4ea;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px;display:inline-block">Track your order &rarr;</a>
+          <a href="${ctaUrl || trackingUrl(order)}" style="background:#b93632;color:#fff4ea;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px;display:inline-block">${ctaLabel}</a>
         </p>
         <p style="color:#7e7064;font-size:11px;margin-top:26px">Order #${order.id} &middot; ${escapeHtml(order.package_name)}</p>
       </div>
@@ -118,4 +118,23 @@ async function sendStatusUpdate(order, fulfillmentStatus) {
   await sendEmail({ to: order.sender_email, subject: `reconcilia — ${copy.subject}`, html });
 }
 
-module.exports = { sendOrderConfirmation, sendStatusUpdate, getStatus };
+// Sent once (guarded by abandoned_email_sent_at) to orders left pending or
+// failed long enough that the customer probably isn't coming right back.
+// Links to the homepage with the box pre-selected rather than trying to
+// restore the whole form - simpler and more robust than replaying every
+// field, and gets them straight back into picking up where they left off.
+async function sendAbandonedCartReminder(order) {
+  const resumeUrl = `${PUBLIC_BASE_URL}/?box=${encodeURIComponent(order.package_name)}`;
+  const html = layout({
+    title: 'Still thinking it over?',
+    order,
+    ctaLabel: 'Finish your gift &rarr;',
+    ctaUrl: resumeUrl,
+    bodyHtml: `
+      <p style="color:#3d332c;line-height:1.6">You started a <b>${escapeHtml(order.package_name)}</b> for ${escapeHtml(order.recipient_name)} but didn't finish checking out. It's still here whenever you're ready — nothing's been charged.</p>
+    `,
+  });
+  await sendEmail({ to: order.sender_email, subject: 'You left your gift for ' + order.recipient_name, html });
+}
+
+module.exports = { sendOrderConfirmation, sendStatusUpdate, sendAbandonedCartReminder, getStatus };
