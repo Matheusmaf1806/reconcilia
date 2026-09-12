@@ -46,15 +46,21 @@
 
     function renderStats(sessions){
       const withZip = sessions.filter(s => s.zip_checked).length;
-      const converted = sessions.filter(s => s.order_id).length;
+      const paid = sessions.filter(s => s.order_status === 'paid').length;
       const stats = [
         { label: 'Sessions tracked', value: sessions.length },
         { label: 'Checked a ZIP', value: withZip },
-        { label: 'Converted to order', value: converted },
+        { label: 'Paid', value: paid },
       ];
       document.getElementById('stats').innerHTML = stats.map(s =>
         `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`
       ).join('');
+    }
+
+    function orderBadge(s){
+      if(!s.order_id) return '<span class="badge pending">no</span>';
+      if(s.order_status === 'paid') return `<span class="badge paid">#${esc(s.order_id)}</span>`;
+      return `<span class="badge pending">#${esc(s.order_id)} unpaid</span>`;
     }
 
     function renderTable(sessions){
@@ -72,7 +78,7 @@
           <td>${esc(s.package_name) || '—'}</td>
           <td style="font-family:monospace">${esc(s.zip_checked) || '—'}</td>
           <td>${fmtDuration(s.seconds_on_page)}</td>
-          <td>${s.order_id ? `<span class="badge paid">#${esc(s.order_id)}</span>` : '<span class="badge pending">no</span>'}</td>
+          <td>${orderBadge(s)}</td>
         </tr>
       `).join('');
       content.innerHTML = `

@@ -139,7 +139,14 @@ async function upsertSession({ id, furthestStep, packageName, zipChecked, second
 
 async function listSessions(limit = 200) {
   await ensureSchema();
-  const result = await pool.query(`SELECT * FROM sessions ORDER BY last_seen_at DESC LIMIT $1`, [limit]);
+  const result = await pool.query(
+    `SELECT sessions.*, orders.status AS order_status
+     FROM sessions
+     LEFT JOIN orders ON orders.id = sessions.order_id
+     ORDER BY sessions.last_seen_at DESC
+     LIMIT $1`,
+    [limit]
+  );
   return result.rows;
 }
 
