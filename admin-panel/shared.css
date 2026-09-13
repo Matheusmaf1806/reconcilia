@@ -43,6 +43,8 @@ tr.row:hover{background:#fff3df}
 .badge.in_transit{background:#e2e8f5;color:#3a4f8f}
 .badge.delivered{background:#e3f0df;color:var(--green)}
 .fstatus-select{font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:#fffaf2;color:var(--ink)}
+.btn-action{font-size:12px;padding:8px 14px;border-radius:6px;border:1px solid var(--red);background:#fffaf2;color:var(--red);cursor:pointer;font-weight:600}
+.btn-action:disabled{opacity:.5;cursor:default}
 
 .empty{padding:40px;text-align:center;color:var(--muted)}
 .overlay{position:fixed;inset:0;background:rgba(23,18,15,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}

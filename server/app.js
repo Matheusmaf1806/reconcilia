@@ -65,13 +65,16 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         // so Meta deduplicates them into a single counted conversion.
         const order = await db.getOrderByPaymentIntentId(intent.id);
         if (order) {
-          metaCapi.sendEvent({
+          // Awaited (not fire-and-forget): on Vercel, work left running after
+          // the response is sent can get frozen mid-flight when the function
+          // suspends, so a "background" send may never actually complete.
+          await metaCapi.sendEvent({
             eventName: 'Purchase',
             eventId: `purchase_${order.id}`,
             order,
             customData: metaCapi.packageCustomData(order),
           }).catch(() => {});
-          emailService.sendOrderConfirmation(order).catch(() => {});
+          await emailService.sendOrderConfirmation(order).catch(() => {});
         }
         break;
       }
@@ -420,6 +423,21 @@ app.get('/api/admin/orders/:id', adminAuth, async (req, res) => {
   }
 });
 
+app.post('/api/admin/orders/:id/recover-cart', adminAuth, async (req, res) => {
+  try {
+    const order = await db.getOrderById(Number(req.params.id));
+    if (!order) return res.status(404).json({ error: 'Order not found.' });
+    if (order.status === 'paid') return res.status(400).json({ error: 'This order is already paid.' });
+    const sent = await emailService.sendAbandonedCartReminder(order);
+    if (!sent) return res.status(502).json({ error: 'Email provider did not accept the message.' });
+    await db.markAbandonedCartEmailSent(order.id);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Failed to send cart-recovery email:', err.message);
+    res.status(500).json({ error: 'Could not send the recovery email.' });
+  }
+});
+
 app.patch('/api/admin/orders/:id/fulfillment-status', adminAuth, async (req, res) => {
   const fulfillmentStatus = req.body?.fulfillmentStatus;
   if (!db.FULFILLMENT_STATUSES.includes(fulfillmentStatus)) {
@@ -429,7 +447,7 @@ app.patch('/api/admin/orders/:id/fulfillment-status', adminAuth, async (req, res
     const updated = await db.updateFulfillmentStatus(Number(req.params.id), fulfillmentStatus);
     if (!updated) return res.status(404).json({ error: 'Order not found.' });
     const order = await db.getOrderById(Number(req.params.id));
-    if (order) emailService.sendStatusUpdate(order, fulfillmentStatus).catch(() => {});
+    if (order) await emailService.sendStatusUpdate(order, fulfillmentStatus).catch(() => {});
     res.json({ ok: true });
   } catch (err) {
     console.error('Failed to update fulfillment status:', err.message);

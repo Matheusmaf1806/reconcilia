@@ -109,8 +109,31 @@
           </dd>
         </dl>
         <div class="note-block">“${esc(o.note)}”</div>
+        ${o.status !== 'paid' ? `
+          <div style="margin-top:16px">
+            <button type="button" class="btn-action" id="recover-cart-btn" onclick="recoverCart(${o.id})">Recuperar carrinho — enviar e-mail</button>
+            <span id="recover-cart-result" style="font-size:12px;margin-left:8px"></span>
+          </div>
+        ` : ''}
       `;
       document.getElementById('overlay').classList.add('show');
+    }
+
+    async function recoverCart(id){
+      const btn = document.getElementById('recover-cart-btn');
+      const result = document.getElementById('recover-cart-result');
+      if(btn) btn.disabled = true;
+      if(result){ result.style.color = 'var(--muted)'; result.textContent = 'Enviando…'; }
+      try {
+        const res = await fetch('/api/admin/orders/' + id + '/recover-cart', { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok) throw new Error(data.error || 'Falha ao enviar.');
+        if(result){ result.style.color = 'var(--green)'; result.textContent = 'E-mail enviado ✓'; }
+      } catch(err){
+        if(result){ result.style.color = 'var(--red)'; result.textContent = err.message || 'Falha ao enviar — tente de novo.'; }
+      } finally {
+        if(btn) btn.disabled = false;
+      }
     }
 
     async function updateFulfillmentStatus(id, fulfillmentStatus){

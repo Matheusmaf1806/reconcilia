@@ -66,7 +66,7 @@ function layout({ title, bodyHtml, order, ctaLabel = 'Track your order &rarr;', 
 // an admin's status update. Every caller already runs this inside its own
 // try/catch, but errors are swallowed here too as a second layer of safety.
 async function sendEmail({ to, subject, html }) {
-  if (!RESEND_API_KEY) return;
+  if (!RESEND_API_KEY) return false;
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -76,9 +76,12 @@ async function sendEmail({ to, subject, html }) {
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       console.error('Resend email failed:', res.status, body);
+      return false;
     }
+    return true;
   } catch (err) {
     console.error('Resend email request error:', err.message);
+    return false;
   }
 }
 
@@ -134,7 +137,7 @@ async function sendAbandonedCartReminder(order) {
       <p style="color:#3d332c;line-height:1.6">You started a <b>${escapeHtml(order.package_name)}</b> for ${escapeHtml(order.recipient_name)} but didn't finish checking out. It's still here whenever you're ready — nothing's been charged.</p>
     `,
   });
-  await sendEmail({ to: order.sender_email, subject: 'You left your gift for ' + order.recipient_name, html });
+  return sendEmail({ to: order.sender_email, subject: 'You left your gift for ' + order.recipient_name, html });
 }
 
 module.exports = { sendOrderConfirmation, sendStatusUpdate, sendAbandonedCartReminder, getStatus };
