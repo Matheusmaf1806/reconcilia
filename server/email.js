@@ -62,6 +62,29 @@ function layout({ title, bodyHtml, order, ctaLabel = 'Track your order &rarr;', 
   `;
 }
 
+// Spam filters weigh an HTML-only email (no text/plain part) as a signal on
+// its own, so every send gets a plain-text alternative derived from the HTML
+// rather than skipping it.
+function htmlToText(html) {
+  return html
+    .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gis, '$2 ($1)')
+    .replace(/<\/(p|div|h1|h2|h3)>/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&hearts;/g, '')
+    .replace(/&rarr;/g, '->')
+    .replace(/&middot;/g, '-')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // Fire-and-forget: an email provider hiccup should never break checkout or
 // an admin's status update. Every caller already runs this inside its own
 // try/catch, but errors are swallowed here too as a second layer of safety.
@@ -71,7 +94,7 @@ async function sendEmail({ to, subject, html }) {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: RESEND_FROM_EMAIL, to, subject, html }),
+      body: JSON.stringify({ from: RESEND_FROM_EMAIL, to, subject, html, text: htmlToText(html) }),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
