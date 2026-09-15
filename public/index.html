@@ -368,6 +368,33 @@ translate(current);
   let furthestStep = 0; // 0 landed, 1-5 modal steps (Box/Delivery/Message/Details/Pay), 6 purchased
   let lastZipChecked = null;
 
+  // First-touch campaign attribution: read UTM params (and fbclid, which
+  // Meta appends to every ad click whether or not the ad itself is UTM
+  // tagged) off the landing URL once, then remember them in sessionStorage
+  // so a later reload in the same tab - which won't have those params in
+  // its URL anymore - still ships them on every ping.
+  function getAttribution(){
+    try {
+      const stored = JSON.parse(sessionStorage.getItem('reconcilia-attribution') || 'null');
+      const params = new URLSearchParams(location.search);
+      const fromUrl = {
+        utmSource: params.get('utm_source') || undefined,
+        utmMedium: params.get('utm_medium') || undefined,
+        utmCampaign: params.get('utm_campaign') || undefined,
+        utmContent: params.get('utm_content') || undefined,
+        utmTerm: params.get('utm_term') || undefined,
+        fbclid: params.get('fbclid') || undefined,
+      };
+      const hasUrlAttribution = Object.values(fromUrl).some(Boolean);
+      if(hasUrlAttribution){
+        sessionStorage.setItem('reconcilia-attribution', JSON.stringify(fromUrl));
+        return fromUrl;
+      }
+      return stored || {};
+    } catch(e){ return {}; }
+  }
+  const attribution = getAttribution();
+
   function sendTrackPing(useBeacon){
     if(!trackSessionId) return;
     const payload = JSON.stringify({
@@ -377,6 +404,12 @@ translate(current);
       zipChecked: lastZipChecked || undefined,
       secondsOnPage: Math.round((Date.now() - pageLoadTime) / 1000),
       orderId: (typeof currentOrderId !== 'undefined' && currentOrderId) || undefined,
+      utmSource: attribution.utmSource,
+      utmMedium: attribution.utmMedium,
+      utmCampaign: attribution.utmCampaign,
+      utmContent: attribution.utmContent,
+      utmTerm: attribution.utmTerm,
+      fbclid: attribution.fbclid,
     });
     if(useBeacon && navigator.sendBeacon){
       navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));

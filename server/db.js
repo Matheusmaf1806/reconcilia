@@ -103,6 +103,15 @@ function ensureSchema() {
         last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       ALTER TABLE sessions ADD COLUMN IF NOT EXISTS zip_checked TEXT;
+      -- First-touch attribution: captured once from the landing URL (UTM
+      -- params, or fbclid as a fallback for ad clicks that arrive without
+      -- manual UTM tagging) and never overwritten by a later, source-less ping.
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS utm_source TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS utm_medium TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS utm_campaign TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS utm_content TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS utm_term TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbclid TEXT;
       CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at);
     `);
   }
@@ -121,19 +130,35 @@ const FUNNEL_STEPS = ['Landed', 'Box', 'Delivery', 'Message', 'Details', 'Pay', 
 // step change, plus a heartbeat while the tab stays open). GREATEST/COALESCE
 // make it safe for pings to arrive out of order or restate stale values -
 // progress and time on page only ever move forward.
-async function upsertSession({ id, furthestStep, packageName, zipChecked, secondsOnPage, orderId }) {
+async function upsertSession({
+  id, furthestStep, packageName, zipChecked, secondsOnPage, orderId,
+  utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid,
+}) {
   await ensureSchema();
   await pool.query(
-    `INSERT INTO sessions (id, furthest_step, package_name, zip_checked, seconds_on_page, order_id, first_seen_at, last_seen_at)
-     VALUES ($1, $2, $3, $4, $5, $6, now(), now())
+    `INSERT INTO sessions (
+       id, furthest_step, package_name, zip_checked, seconds_on_page, order_id,
+       utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid,
+       first_seen_at, last_seen_at
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), now())
      ON CONFLICT (id) DO UPDATE SET
        furthest_step = GREATEST(sessions.furthest_step, EXCLUDED.furthest_step),
        package_name = COALESCE(EXCLUDED.package_name, sessions.package_name),
        zip_checked = COALESCE(EXCLUDED.zip_checked, sessions.zip_checked),
        seconds_on_page = GREATEST(sessions.seconds_on_page, EXCLUDED.seconds_on_page),
        order_id = COALESCE(EXCLUDED.order_id, sessions.order_id),
+       utm_source = COALESCE(sessions.utm_source, EXCLUDED.utm_source),
+       utm_medium = COALESCE(sessions.utm_medium, EXCLUDED.utm_medium),
+       utm_campaign = COALESCE(sessions.utm_campaign, EXCLUDED.utm_campaign),
+       utm_content = COALESCE(sessions.utm_content, EXCLUDED.utm_content),
+       utm_term = COALESCE(sessions.utm_term, EXCLUDED.utm_term),
+       fbclid = COALESCE(sessions.fbclid, EXCLUDED.fbclid),
        last_seen_at = now()`,
-    [id, furthestStep, packageName || null, zipChecked || null, secondsOnPage, orderId || null]
+    [
+      id, furthestStep, packageName || null, zipChecked || null, secondsOnPage, orderId || null,
+      utmSource || null, utmMedium || null, utmCampaign || null, utmContent || null, utmTerm || null, fbclid || null,
+    ]
   );
 }
 

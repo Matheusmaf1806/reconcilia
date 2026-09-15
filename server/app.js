@@ -121,9 +121,18 @@ app.post('/api/track', async (req, res) => {
   const orderId = Number.isInteger(Number(b.orderId)) && Number(b.orderId) > 0 ? Number(b.orderId) : null;
   const zipDigits = typeof b.zipChecked === 'string' ? b.zipChecked.replace(/\D/g, '').slice(0, 5) : '';
   const zipChecked = zipDigits.length === 5 ? zipDigits : null;
+  const utmSource = isNonEmptyString(b.utmSource, 100) ? b.utmSource.trim() : null;
+  const utmMedium = isNonEmptyString(b.utmMedium, 100) ? b.utmMedium.trim() : null;
+  const utmCampaign = isNonEmptyString(b.utmCampaign, 150) ? b.utmCampaign.trim() : null;
+  const utmContent = isNonEmptyString(b.utmContent, 150) ? b.utmContent.trim() : null;
+  const utmTerm = isNonEmptyString(b.utmTerm, 150) ? b.utmTerm.trim() : null;
+  const fbclid = isNonEmptyString(b.fbclid, 200) ? b.fbclid.trim() : null;
 
   try {
-    await db.upsertSession({ id: sessionId, furthestStep, packageName, zipChecked, secondsOnPage, orderId });
+    await db.upsertSession({
+      id: sessionId, furthestStep, packageName, zipChecked, secondsOnPage, orderId,
+      utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid,
+    });
   } catch (err) {
     console.error('Failed to record funnel tracking ping:', err.message);
   }

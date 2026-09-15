@@ -44,11 +44,25 @@
       }
     }
 
+    function isFromAds(s){
+      return Boolean(s.fbclid) || /facebook|instagram|meta|fb|ig/i.test(s.utm_source || '');
+    }
+
+    function sourceLabel(s){
+      if(s.utm_source){
+        return esc(s.utm_source) + (s.utm_campaign ? ' &middot; ' + esc(s.utm_campaign) : '');
+      }
+      if(s.fbclid) return 'Meta Ads <span style="color:var(--muted);font-size:11px">(auto)</span>';
+      return '<span style="color:var(--muted)">Direct / organic</span>';
+    }
+
     function renderStats(sessions){
       const withZip = sessions.filter(s => s.zip_checked).length;
       const paid = sessions.filter(s => s.order_status === 'paid').length;
+      const fromAds = sessions.filter(isFromAds).length;
       const stats = [
         { label: 'Sessions tracked', value: sessions.length },
+        { label: 'From ads', value: fromAds },
         { label: 'Checked a ZIP', value: withZip },
         { label: 'Paid', value: paid },
       ];
@@ -73,7 +87,7 @@
         <tr>
           <td style="font-family:monospace;font-size:11px">${esc(s.id.slice(0, 8))}…</td>
           <td>${fmtDate(s.first_seen_at)}</td>
-          <td>${fmtDate(s.last_seen_at)}</td>
+          <td>${sourceLabel(s)}</td>
           <td>${esc(FUNNEL_STEP_LABELS[s.furthest_step] || s.furthest_step)}</td>
           <td>${esc(s.package_name) || '—'}</td>
           <td style="font-family:monospace">${esc(s.zip_checked) || '—'}</td>
@@ -83,7 +97,7 @@
       `).join('');
       content.innerHTML = `
         <table>
-          <thead><tr><th>Session</th><th>First seen</th><th>Last seen</th><th>Furthest step</th><th>Package</th><th>ZIP checked</th><th>Time on page</th><th>Order</th></tr></thead>
+          <thead><tr><th>Session</th><th>First seen</th><th>Source</th><th>Furthest step</th><th>Package</th><th>ZIP checked</th><th>Time on page</th><th>Order</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       `;
