@@ -56,13 +56,36 @@
       return '<span style="color:var(--muted)">Direct / organic</span>';
     }
 
+    const QUIZ_LABELS = {
+      recipient: { her: 'For her', him: 'For him', private: 'Private' },
+      reason: { fight: 'Had a fight', surprise: 'Surprise', miss: 'Misses them', forgot: 'Forgot a date', care: 'Show care' },
+      feeling: { happy: 'Happy', thinking: 'Thinking of them', talk: 'Talk again', sorry: 'Truly sorry', special: 'Special moment', unknown: 'Unsure' },
+    };
+
+    function pageLabel(s){
+      if(s.entry_page === 'quiz') return '<span class="badge paid">Quiz</span>';
+      if(s.entry_page === 'home') return '<span class="badge pending">Home</span>';
+      return '<span style="color:var(--muted)">—</span>';
+    }
+
+    function quizAnswers(s){
+      const parts = [
+        QUIZ_LABELS.recipient[s.quiz_recipient],
+        QUIZ_LABELS.reason[s.quiz_reason],
+        QUIZ_LABELS.feeling[s.quiz_feeling],
+      ].filter(Boolean);
+      return parts.length ? esc(parts.join(' · ')) : '<span style="color:var(--muted)">—</span>';
+    }
+
     function renderStats(sessions){
       const withZip = sessions.filter(s => s.zip_checked).length;
       const paid = sessions.filter(s => s.order_status === 'paid').length;
       const fromAds = sessions.filter(isFromAds).length;
+      const fromQuiz = sessions.filter(s => s.entry_page === 'quiz').length;
       const stats = [
         { label: 'Sessions tracked', value: sessions.length },
         { label: 'From ads', value: fromAds },
+        { label: 'Via quiz', value: fromQuiz },
         { label: 'Checked a ZIP', value: withZip },
         { label: 'Paid', value: paid },
       ];
@@ -88,6 +111,8 @@
           <td style="font-family:monospace;font-size:11px">${esc(s.id.slice(0, 8))}…</td>
           <td>${fmtDate(s.first_seen_at)}</td>
           <td>${sourceLabel(s)}</td>
+          <td>${pageLabel(s)}</td>
+          <td style="font-size:12px">${quizAnswers(s)}</td>
           <td>${esc(FUNNEL_STEP_LABELS[s.furthest_step] || s.furthest_step)}</td>
           <td>${esc(s.package_name) || '—'}</td>
           <td style="font-family:monospace">${esc(s.zip_checked) || '—'}</td>
@@ -97,7 +122,7 @@
       `).join('');
       content.innerHTML = `
         <table>
-          <thead><tr><th>Session</th><th>First seen</th><th>Source</th><th>Furthest step</th><th>Package</th><th>ZIP checked</th><th>Time on page</th><th>Order</th></tr></thead>
+          <thead><tr><th>Session</th><th>First seen</th><th>Source</th><th>Page</th><th>Quiz answers</th><th>Furthest step</th><th>Package</th><th>ZIP checked</th><th>Time on page</th><th>Order</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       `;
