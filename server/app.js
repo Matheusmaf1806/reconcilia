@@ -127,11 +127,17 @@ app.post('/api/track', async (req, res) => {
   const utmContent = isNonEmptyString(b.utmContent, 150) ? b.utmContent.trim() : null;
   const utmTerm = isNonEmptyString(b.utmTerm, 150) ? b.utmTerm.trim() : null;
   const fbclid = isNonEmptyString(b.fbclid, 200) ? b.fbclid.trim() : null;
+  const entryPage = ['home', 'quiz'].includes(b.page) ? b.page : null;
+  const quizAnswer = v => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : null);
+  const quizRecipient = quizAnswer(b.quizRecipient);
+  const quizReason = quizAnswer(b.quizReason);
+  const quizFeeling = quizAnswer(b.quizFeeling);
 
   try {
     await db.upsertSession({
       id: sessionId, furthestStep, packageName, zipChecked, secondsOnPage, orderId,
       utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid,
+      entryPage, quizRecipient, quizReason, quizFeeling,
     });
   } catch (err) {
     console.error('Failed to record funnel tracking ping:', err.message);

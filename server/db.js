@@ -112,6 +112,12 @@ function ensureSchema() {
       ALTER TABLE sessions ADD COLUMN IF NOT EXISTS utm_content TEXT;
       ALTER TABLE sessions ADD COLUMN IF NOT EXISTS utm_term TEXT;
       ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fbclid TEXT;
+      -- Which page the visitor entered through ('home' or 'quiz'), plus the
+      -- quiz's own anonymous answers (who it's for, why, desired feeling).
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS entry_page TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS quiz_recipient TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS quiz_reason TEXT;
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS quiz_feeling TEXT;
       CREATE INDEX IF NOT EXISTS idx_sessions_last_seen ON sessions(last_seen_at);
     `);
   }
@@ -133,15 +139,17 @@ const FUNNEL_STEPS = ['Landed', 'Box', 'Delivery', 'Message', 'Details', 'Pay', 
 async function upsertSession({
   id, furthestStep, packageName, zipChecked, secondsOnPage, orderId,
   utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid,
+  entryPage, quizRecipient, quizReason, quizFeeling,
 }) {
   await ensureSchema();
   await pool.query(
     `INSERT INTO sessions (
        id, furthest_step, package_name, zip_checked, seconds_on_page, order_id,
        utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid,
+       entry_page, quiz_recipient, quiz_reason, quiz_feeling,
        first_seen_at, last_seen_at
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), now())
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, now(), now())
      ON CONFLICT (id) DO UPDATE SET
        furthest_step = GREATEST(sessions.furthest_step, EXCLUDED.furthest_step),
        package_name = COALESCE(EXCLUDED.package_name, sessions.package_name),
@@ -154,10 +162,15 @@ async function upsertSession({
        utm_content = COALESCE(sessions.utm_content, EXCLUDED.utm_content),
        utm_term = COALESCE(sessions.utm_term, EXCLUDED.utm_term),
        fbclid = COALESCE(sessions.fbclid, EXCLUDED.fbclid),
+       entry_page = COALESCE(sessions.entry_page, EXCLUDED.entry_page),
+       quiz_recipient = COALESCE(EXCLUDED.quiz_recipient, sessions.quiz_recipient),
+       quiz_reason = COALESCE(EXCLUDED.quiz_reason, sessions.quiz_reason),
+       quiz_feeling = COALESCE(EXCLUDED.quiz_feeling, sessions.quiz_feeling),
        last_seen_at = now()`,
     [
       id, furthestStep, packageName || null, zipChecked || null, secondsOnPage, orderId || null,
       utmSource || null, utmMedium || null, utmCampaign || null, utmContent || null, utmTerm || null, fbclid || null,
+      entryPage || null, quizRecipient || null, quizReason || null, quizFeeling || null,
     ]
   );
 }

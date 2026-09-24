@@ -399,6 +399,7 @@ translate(current);
     if(!trackSessionId) return;
     const payload = JSON.stringify({
       sessionId: trackSessionId,
+      page: 'home',
       furthestStep,
       packageName: state.packageName || undefined,
       zipChecked: lastZipChecked || undefined,
@@ -1024,6 +1025,8 @@ translate(current);
     payBtn.textContent = s.processingPayment;
 
     try {
+      // Lets success.html credit a 3D-Secure redirect to this page's session.
+      try { if(trackSessionId) sessionStorage.setItem('reconcilia-checkout-session', trackSessionId); } catch(e){}
       const result = await stripeClient.confirmPayment({
         elements: stripeElements,
         confirmParams: {

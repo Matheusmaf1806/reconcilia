@@ -97,7 +97,7 @@
           // across this same-tab redirect) so this counts as that same
           // visitor reaching "Purchased", not a disconnected new session.
           try {
-            const sessionId = sessionStorage.getItem('reconcilia-session-id');
+            const sessionId = sessionStorage.getItem('reconcilia-checkout-session') || sessionStorage.getItem('reconcilia-session-id');
             if(sessionId){
               fetch('/api/track', {
                 method: 'POST',
